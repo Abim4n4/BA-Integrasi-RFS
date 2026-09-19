@@ -1,0 +1,333 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --theme-name: "day";
+    --bg-page: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-surface-elevated: #f1f5f9;
+    --bg-surface-muted: #e2e8f0;
+    --border-color: #cbd5e1;
+    --border-subtle: #e2e8f0;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: #eff6ff;
+    --accent-glow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    --badge-bg: #e0e7ff;
+    --badge-text: #3730a3;
+    --input-bg: #ffffff;
+    --input-border: #cbd5e1;
+  }
+
+  [data-theme="night"] {
+    --theme-name: "night";
+    --bg-page: #0b0f19;
+    --bg-surface: #111827;
+    --bg-surface-elevated: #1f2937;
+    --bg-surface-muted: #374151;
+    --border-color: #374151;
+    --border-subtle: #1f2937;
+    --text-main: #f9fafb;
+    --text-muted: #9ca3af;
+    --text-dim: #6b7280;
+    --accent: #38bdf8;
+    --accent-hover: #0284c7;
+    --accent-light: rgba(56, 189, 248, 0.12);
+    --accent-glow: 0 4px 20px rgba(56, 189, 248, 0.2);
+    --badge-bg: rgba(56, 189, 248, 0.15);
+    --badge-text: #7dd3fc;
+    --input-bg: #1f2937;
+    --input-border: #374151;
+  }
+
+  [data-theme="metrik"] {
+    --theme-name: "metrik";
+    --bg-page: #041d14;
+    --bg-surface: #062b1e;
+    --bg-surface-elevated: #0a3d2b;
+    --bg-surface-muted: #0f523b;
+    --border-color: #059669;
+    --border-subtle: #047857;
+    --text-main: #ecfdf5;
+    --text-muted: #a7f3d0;
+    --text-dim: #6ee7b7;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --accent-light: rgba(16, 185, 129, 0.15);
+    --accent-glow: 0 4px 20px rgba(16, 185, 129, 0.25);
+    --badge-bg: rgba(16, 185, 129, 0.2);
+    --badge-text: #34d399;
+    --input-bg: #073525;
+    --input-border: #059669;
+  }
+
+  [data-theme="electric-neon"] {
+    --theme-name: "electric-neon";
+    --bg-page: #030811;
+    --bg-surface: #071322;
+    --bg-surface-elevated: #0b1f38;
+    --bg-surface-muted: #112d4e;
+    --border-color: #00f0ff;
+    --border-subtle: #0284c7;
+    --text-main: #e0f2fe;
+    --text-muted: #7dd3fc;
+    --text-dim: #38bdf8;
+    --accent: #00f0ff;
+    --accent-hover: #38bdf8;
+    --accent-light: rgba(0, 240, 255, 0.15);
+    --accent-glow: 0 0 20px rgba(0, 240, 255, 0.45);
+    --badge-bg: rgba(0, 240, 255, 0.2);
+    --badge-text: #00f0ff;
+    --input-bg: #091728;
+    --input-border: #0284c7;
+  }
+
+  [data-theme="purple-neon"] {
+    --theme-name: "purple-neon";
+    --bg-page: #0c0414;
+    --bg-surface: #180829;
+    --bg-surface-elevated: #280e42;
+    --bg-surface-muted: #3b1461;
+    --border-color: #c084fc;
+    --border-subtle: #9333ea;
+    --text-main: #faf5ff;
+    --text-muted: #e9d5ff;
+    --text-dim: #c084fc;
+    --accent: #d946ef;
+    --accent-hover: #c026d3;
+    --accent-light: rgba(217, 70, 239, 0.18);
+    --accent-glow: 0 0 22px rgba(217, 70, 239, 0.5);
+    --badge-bg: rgba(217, 70, 239, 0.22);
+    --badge-text: #f0abfc;
+    --input-bg: #1f0b33;
+    --input-border: #9333ea;
+  }
+
+  [data-theme="blue-neon"] {
+    --theme-name: "blue-neon";
+    --bg-page: #020713;
+    --bg-surface: #07152b;
+    --bg-surface-elevated: #0d2244;
+    --bg-surface-muted: #13315c;
+    --border-color: #3b82f6;
+    --border-subtle: #1d4ed8;
+    --text-main: #eff6ff;
+    --text-muted: #bfdbfe;
+    --text-dim: #93c5fd;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-light: rgba(59, 130, 246, 0.18);
+    --accent-glow: 0 0 20px rgba(59, 130, 246, 0.45);
+    --badge-bg: rgba(59, 130, 246, 0.2);
+    --badge-text: #60a5fa;
+    --input-bg: #0a1b35;
+    --input-border: #2563eb;
+  }
+
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+}
+
+/* Theme helper utility classes */
+.app-bg {
+  background-color: var(--bg-page);
+}
+
+.surface-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--accent-glow);
+}
+
+.surface-elevated {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.surface-muted {
+  background-color: var(--bg-surface-muted);
+}
+
+.text-main {
+  color: var(--text-main);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-dim {
+  color: var(--text-dim);
+}
+
+.accent-color {
+  color: var(--accent);
+}
+
+.accent-bg {
+  background-color: var(--accent);
+}
+
+.accent-border {
+  border-color: var(--accent);
+}
+
+.neon-glow {
+  box-shadow: var(--accent-glow);
+}
+
+.signature-canvas {
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* =========================================================================
+   PRINT MEDIA STYLING FOR OFFICIAL BERITA ACARA RFS
+   ========================================================================= */
+@page {
+  size: A4 portrait;
+  margin: 12mm 10mm;
+}
+
+@media print {
+  /* Reset Root, HTML, Body */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Sembunyikan elemen non-cetak (Navbar, Sidebar, Backdrop, Header App, Tombol) */
+  .no-print,
+  nav,
+  aside,
+  header,
+  button,
+  .theme-switcher,
+  .action-toolbar,
+  #mainSidebar,
+  #mobileBackdrop {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Hilangkan posisi fixed, scroll viewport, dan batasan ukuran pada wrapper modal */
+  div[class*="fixed inset-0"],
+  .modal-backdrop,
+  .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Kontener Utama Dokumen Cetak */
+  .surface-card,
+  .print-document-container {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .print-document {
+    display: block !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Cegah pemotongan ganjil antar halaman (break-inside avoid) */
+  .print-section,
+  .print-avoid-break,
+  .print-header-section,
+  section,
+  table,
+  tbody,
+  tr,
+  .signature-grid,
+  .signature-box {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Format Tabel Resmi */
+  table,
+  .print-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+
+  table th,
+  table td,
+  .print-table th,
+  .print-table td {
+    border: 1px solid #64748b !important;
+    padding: 4px 6px !important;
+    color: #000000 !important;
+    background-color: transparent !important;
+  }
+
+  .print-header-bg,
+  thead tr,
+  th {
+    background-color: #f1f5f9 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Blok Tanda Tangan */
+  .signature-box {
+    border: 1px solid #64748b !important;
+    height: auto !important;
+    min-height: 140px !important;
+    background: #ffffff !important;
+  }
+}

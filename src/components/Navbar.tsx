@@ -1,0 +1,25 @@
+import React from "react";
+import { Sidebar } from "./Sidebar.tsx";
+import { User, ThemeMode } from "../types.ts";
+
+interface NavbarProps {
+  currentUser: User | null;
+  activeTab: "form" | "table" | "admin" | "gas";
+  onTabChange: (tab: "form" | "table" | "admin" | "gas") => void;
+  currentTheme: ThemeMode;
+  onThemeChange: (theme: ThemeMode) => void;
+  onLogout: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+/**
+ * Backward-compatible wrapper that renders the new Vertical Sidebar Navigation
+ */
+export const Navbar: React.FC<NavbarProps> = (props) => {
+  return <Sidebar {...props} />;
+};
+
+export { Sidebar };

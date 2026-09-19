@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Rules for Berita Acara RFS documents
+    match /beritaAcara/{docId} {
+      allow read: if true; // Public read for previewing documents, or restricted if needed
+      allow create: if true; // Allow submission from field app
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Rules for Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

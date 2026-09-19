@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "BeritaAcara": {
+      "title": "BeritaAcara",
+      "description": "Dokumen Berita Acara Ready For Service (BA-RFS) resmi",
+      "type": "object",
+      "properties": {
+        "noBa": { "type": "string", "description": "Nomor Berita Acara RFS" },
+        "tanggal": { "type": "string", "description": "Tanggal pelaksanaan" },
+        "waktu": { "type": "string", "description": "Waktu pelaksanaan" },
+        "isp": { "type": "string", "description": "Nama ISP" },
+        "customerName": { "type": "string", "description": "Nama Pelanggan / Mitra" },
+        "locationName": { "type": "string", "description": "Nama Lokasi Instalasi" },
+        "siteName": { "type": "string", "description": "Nama Site" },
+        "siteAddress": { "type": "string", "description": "Alamat Site & Geotag" },
+        "gpsCoordinates": { "type": "string", "description": "Koordinat GPS Latitude, Longitude" },
+        "serviceType": { "type": "string", "description": "Jenis Layanan Broadband / Dedicated / IP Transit" },
+        "subscribedBandwidth": { "type": "number", "description": "Kapasitas Bandwidth Berlangganan" },
+        "bandwidthUnit": { "type": "string", "description": "Satuan Bandwidth (Mbps / Gbps)" },
+        "downloadSpeed": { "type": "number", "description": "Throughput Download" },
+        "uploadSpeed": { "type": "number", "description": "Throughput Upload" },
+        "pingLatency": { "type": "number", "description": "Nilai Latency Ping (ms)" },
+        "jitter": { "type": "number", "description": "Nilai Jitter (ms)" },
+        "packetLoss": { "type": "number", "description": "Nilai Packet Loss (%)" },
+        "technicianName": { "type": "string", "description": "Nama Teknisi Pelaksana" },
+        "technicianPhone": { "type": "string", "description": "Nomor Kontak Teknisi" },
+        "picCustomerName": { "type": "string", "description": "Nama PIC / Customer" },
+        "picCustomerPhone": { "type": "string", "description": "Nomor Kontak PIC" },
+        "ispSignerName": { "type": "string", "description": "Penandatangan Pihak ISP" },
+        "waspangSignerName": { "type": "string", "description": "Penandatangan Pihak Waspang" },
+        "neSignerName": { "type": "string", "description": "Penandatangan Pihak NE" },
+        "status": { "type": "string", "description": "Status RFS" },
+        "generalNotes": { "type": "string", "description": "Catatan Umum" },
+        "signatureIsp": { "type": "string", "description": "Tanda tangan digital ISP base64" },
+        "signatureWaspang": { "type": "string", "description": "Tanda tangan digital Waspang base64" },
+        "signatureNe": { "type": "string", "description": "Tanda tangan digital NE base64" },
+        "createdAt": { "type": "string", "description": "Waktu pembuatan dokumen" },
+        "createdBy": { "type": "string", "description": "User ID pembuat dokumen" }
+      },
+      "required": ["noBa", "tanggal", "waktu", "isp", "locationName", "status"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil pengguna dan peran otorisasi sistem",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "Alamat email akun Google" },
+        "name": { "type": "string", "description": "Nama lengkap pengguna" },
+        "role": { "type": "string", "description": "Peran pengguna (admin / technician)" },
+        "createdAt": { "type": "string", "description": "Waktu pendaftaran profil" }
+      },
+      "required": ["email", "name", "role"]
+    }
+  },
+  "firestore": {
+    "/beritaAcara/{docId}": {
+      "schema": { "$ref": "#/entities/BeritaAcara" },
+      "description": "Koleksi Berita Acara Ready For Service (BA-RFS)"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Koleksi profil pengguna"
+    }
+  }
+}
