@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ThemeMode, User, BeritaAcaraRFS } from "./types.ts";
+import { ThemeMode, User, BeritaAcaraRFS, WorkNoteEntry, FontSizeMode } from "./types.ts";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { FormRfs } from "./components/FormRfs.tsx";
 import { TableRekapan } from "./components/TableRekapan.tsx";
@@ -39,6 +39,16 @@ export default function App() {
     const saved = localStorage.getItem("rfs_theme") as ThemeMode;
     return saved || "day";
   });
+
+  // Font Size Accessibility State (Mode Ramah Waspang Senior Lapangan)
+  const [fontSize, setFontSize] = useState<FontSizeMode>(() => {
+    return (localStorage.getItem("rfs_font_size") as FontSizeMode) || "waspang";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-font-size", fontSize);
+    localStorage.setItem("rfs_font_size", fontSize);
+  }, [fontSize]);
 
   // Auth & Session state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -211,6 +221,38 @@ export default function App() {
     }
   };
 
+  // Add Field Work Note to Record & Sync
+  const handleAddWorkNote = async (recordId: string, noteData: {
+    note: string;
+    author: string;
+    role: string;
+    category: WorkNoteEntry['category'];
+  }) => {
+    try {
+      const res = await fetch("/api/rfs/add-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: recordId, ...noteData })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || "Gagal menyimpan catatan.");
+      }
+      const updatedRecord: BeritaAcaraRFS = data.data;
+      setRecords(prev => prev.map(r => r.id === recordId ? updatedRecord : r));
+      if (selectedDoc && selectedDoc.id === recordId) {
+        setSelectedDoc(updatedRecord);
+      }
+      try {
+        await saveRecordToFirestore(updatedRecord);
+      } catch (fsErr) {
+        console.warn("Firestore sync notification on add note:", fsErr);
+      }
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
   return (
     <div className="min-h-screen app-bg text-main transition-colors duration-200">
       {/* Toast Notification */}
@@ -245,6 +287,8 @@ export default function App() {
         onTabChange={setActiveTab}
         currentTheme={theme}
         onThemeChange={handleThemeChange}
+        fontSize={fontSize}
+        onFontSizeChange={setFontSize}
         onLogout={handleLogout}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={toggleSidebarCollapse}
@@ -345,6 +389,53 @@ export default function App() {
 
           {/* Right Topbar Indicators */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick Font Size Switcher for Field Waspang */}
+            <div 
+              className="flex items-center gap-0.5 surface-elevated border border-subtle rounded-full p-0.5 text-xs shadow-xs" 
+              title="Pengatur Ukuran Huruf (Ramah Pengawas Lapangan/Waspang Senior)"
+            >
+              <span className="text-[11px] font-bold text-muted px-1.5 hidden md:inline-flex items-center gap-1 select-none">
+                <span>👓</span>
+                <span className="hidden xl:inline">Font Waspang:</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setFontSize("normal")}
+                className={`px-2 py-0.5 rounded-full font-bold transition-all text-xs cursor-pointer ${
+                  fontSize === "normal"
+                    ? "bg-slate-700 text-white shadow-xs"
+                    : "text-muted hover:text-main hover:bg-slate-200 dark:hover:bg-slate-800"
+                }`}
+                title="Ukuran Standar Normal (100%)"
+              >
+                A
+              </button>
+              <button
+                type="button"
+                onClick={() => setFontSize("waspang")}
+                className={`px-2 py-0.5 rounded-full font-bold transition-all text-xs cursor-pointer ${
+                  fontSize === "waspang"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-muted hover:text-main hover:bg-slate-200 dark:hover:bg-slate-800"
+                }`}
+                title="Mode Nyaman Waspang (+16% - Sangat Disarankan untuk Lapangan)"
+              >
+                A+
+              </button>
+              <button
+                type="button"
+                onClick={() => setFontSize("extra")}
+                className={`px-2 py-0.5 rounded-full font-bold transition-all text-xs cursor-pointer ${
+                  fontSize === "extra"
+                    ? "bg-amber-600 text-white shadow-xs"
+                    : "text-muted hover:text-main hover:bg-slate-200 dark:hover:bg-slate-800"
+                }`}
+                title="Mode Ekstra Jelas (+28% - Tulisan Besar)"
+              >
+                A++
+              </button>
+            </div>
+
             {/* FMKA Corporate Logo Badge */}
             <div className="hidden lg:flex items-center gap-2 pr-3 border-r border-subtle">
               <div className="w-7 h-7 rounded-full bg-slate-950 flex items-center justify-center p-0.5 border border-slate-700 shadow-sm">
@@ -397,6 +488,7 @@ export default function App() {
               onViewPrint={setSelectedDoc}
               onDeleteRecord={handleDeleteRecord}
               onShowToast={showToast}
+              onAddWorkNote={handleAddWorkNote}
             />
           )}
 

@@ -88,6 +88,10 @@ interface BaRecord {
   evidentSpeedtest?: string;
   evidentRedamanOpm?: string;
   evidentPerangkat?: string;
+  deviceInstalled?: boolean;
+  deviceType?: string;
+  serialNumber?: string;
+  interfaceType?: string;
   evidentPocGallery?: any[];
   closingStatement?: string;
   technicianName: string;
@@ -101,6 +105,7 @@ interface BaRecord {
   neSignerName: string;
   status: "Ready For Service" | "Conditional RFS" | "Pending Review";
   generalNotes?: string;
+  workNotesHistory?: any[];
   signatureIsp?: string;
   signatureWaspang?: string;
   signatureNe?: string;
@@ -312,7 +317,8 @@ async function analyzeWithGemini(data: {
         httpOptions: {
           headers: {
             "User-Agent": "aistudio-build"
-          }
+          },
+          timeout: 10000
         }
       });
 
@@ -340,34 +346,68 @@ Buat evaluasi teknis profesional terstruktur dalam format JSON VALID murni (tanp
   "recommendations": ["Rekomendasi teknis 1", "Rekomendasi teknis 2"]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.2
+      // Multi-model resilience pool with automatic retry on 503 (high demand) and 429
+      const CANDIDATE_MODELS = [
+        { id: "gemini-3.8-flash", label: "gemini-3.8-flash (Google GenAI)" },
+        { id: "gemini-3.1-flash-lite", label: "gemini-3.1-flash-lite (Google GenAI Failover)" },
+        { id: "gemini-flash-latest", label: "gemini-flash-latest (Google GenAI Alternate)" }
+      ];
+
+      for (const candidate of CANDIDATE_MODELS) {
+        let retries = 1;
+        while (retries >= 0) {
+          try {
+            const response = await ai.models.generateContent({
+              model: candidate.id,
+              contents: prompt,
+              config: {
+                responseMimeType: "application/json",
+                temperature: 0.2
+              }
+            });
+
+            let text = response.text || "";
+            if (text.startsWith("```")) {
+              text = text.replace(/^```[a-z]*\n?/i, "").replace(/```\s*$/, "").trim();
+            }
+            const parsed = JSON.parse(text);
+
+            return {
+              summary: parsed.summary || "Analisis link selesai.",
+              rating: parsed.rating || (dlRatio >= 90 ? "Sangat Baik" : "Optimal"),
+              slaStatus: parsed.slaStatus || (dlRatio >= 85 ? "Memenuhi SLA (Pass)" : "Conditional (Review)"),
+              downloadRatioPercent: dlRatio,
+              uploadRatioPercent: ulRatio,
+              latencyAssessment: parsed.latencyAssessment || `Latency ${data.pingLatency} ms.`,
+              jitterAssessment: parsed.jitterAssessment || `Jitter ${data.jitter} ms.`,
+              packetLossAssessment: parsed.packetLossAssessment || `Packet loss ${data.packetLoss}%.`,
+              technicalNotes: parsed.technicalNotes || "Performa jaringan telah diverifikasi memenuhi spesifikasi kontrak.",
+              recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : ["Monitoring performa link selama 24 jam."],
+              analyzedAt: new Date().toLocaleDateString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB",
+              modelUsed: candidate.label
+            };
+          } catch (err: any) {
+            const errMsg = err?.message || String(err);
+            const isHighDemandOrRateLimit =
+              errMsg.includes("503") ||
+              errMsg.includes("UNAVAILABLE") ||
+              errMsg.includes("high demand") ||
+              errMsg.includes("429") ||
+              errMsg.includes("RESOURCE_EXHAUSTED");
+
+            if (isHighDemandOrRateLimit && retries > 0) {
+              retries--;
+              await new Promise((resolve) => setTimeout(resolve, 800));
+              continue;
+            }
+
+            console.warn(`[Gemini AI] Model ${candidate.id} transient issue: ${errMsg.slice(0, 100)}. Switching to next candidate...`);
+            break;
+          }
         }
-      });
-
-      const text = response.text || "";
-      const parsed = JSON.parse(text);
-
-      return {
-        summary: parsed.summary || "Analisis link selesai.",
-        rating: parsed.rating || (dlRatio >= 90 ? "Sangat Baik" : "Optimal"),
-        slaStatus: parsed.slaStatus || (dlRatio >= 85 ? "Memenuhi SLA (Pass)" : "Conditional (Review)"),
-        downloadRatioPercent: dlRatio,
-        uploadRatioPercent: ulRatio,
-        latencyAssessment: parsed.latencyAssessment || `Latency ${data.pingLatency} ms.`,
-        jitterAssessment: parsed.jitterAssessment || `Jitter ${data.jitter} ms.`,
-        packetLossAssessment: parsed.packetLossAssessment || `Packet loss ${data.packetLoss}%.`,
-        technicalNotes: parsed.technicalNotes || "Performa jaringan telah diverifikasi memenuhi spesifikasi kontrak.",
-        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : ["Monitoring performa link selama 24 jam."],
-        analyzedAt: new Date().toLocaleDateString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB",
-        modelUsed: "gemini-3.8-flash (Live Google GenAI)"
-      };
+      }
     } catch (err: any) {
-      console.warn("Gemini API call failed, falling back to smart heuristic:", err?.message || err);
+      console.warn("[Gemini AI] All models temporarily busy, activating ITU-T standard engine:", err?.message || err);
     }
   }
 
@@ -577,6 +617,10 @@ app.post("/api/rfs/create", async (req, res) => {
       evidentSpeedtest: payload.evidentSpeedtest || "",
       evidentRedamanOpm: payload.evidentRedamanOpm || "",
       evidentPerangkat: payload.evidentPerangkat || "",
+      deviceInstalled: payload.deviceInstalled !== false,
+      deviceType: payload.deviceType || "",
+      serialNumber: payload.serialNumber || "",
+      interfaceType: payload.interfaceType || "SFP 1G",
       evidentPocGallery: Array.isArray(payload.evidentPocGallery) ? payload.evidentPocGallery : [],
       closingStatement: payload.closingStatement || "Demikian RFS ini dilakukan dengan pengecekan pada kapasitas yang sudah sesuai pada report tersebut.",
       technicianName: payload.technicianName || "Teknisi Lapangan",
@@ -590,6 +634,20 @@ app.post("/api/rfs/create", async (req, res) => {
       neSignerName: payload.neSignerName || "Bambang Kurniawan, S.T. (NE)",
       status: payload.status || (aiAnalysis.slaStatus.includes("Fail") ? "Pending Review" : "Ready For Service"),
       generalNotes: payload.generalNotes || "",
+      workNotesHistory: Array.isArray(payload.workNotesHistory) && payload.workNotesHistory.length > 0
+        ? payload.workNotesHistory
+        : (payload.testNotes
+            ? [
+                {
+                  id: `note_${Date.now()}`,
+                  timestamp: now.toISOString(),
+                  author: payload.technicianName || "Teknisi Lapangan",
+                  role: "Teknisi",
+                  category: "Instalasi",
+                  content: payload.testNotes
+                }
+              ]
+            : []),
       signatureIsp: payload.signatureIsp || "",
       signatureWaspang: payload.signatureWaspang || "",
       signatureNe: payload.signatureNe || "",
@@ -612,6 +670,42 @@ app.post("/api/rfs/create", async (req, res) => {
     console.error("Error creating RFS:", error);
     return res.status(500).json({ success: false, message: error.message || "Gagal membuat Berita Acara RFS." });
   }
+});
+
+// RFS: Add Field Work Note / Activity Log to record
+app.post("/api/rfs/add-note", (req, res) => {
+  const { id, note, author, role, category } = req.body;
+  if (!id || !note) {
+    return res.status(400).json({ success: false, message: "ID Dokumen dan Catatan wajib diisi." });
+  }
+
+  const record = baRecordsStore.find(r => r.id === id);
+  if (!record) {
+    return res.status(404).json({ success: false, message: "Dokumen RFS tidak ditemukan." });
+  }
+
+  if (!Array.isArray(record.workNotesHistory)) {
+    record.workNotesHistory = [];
+  }
+
+  const newEntry = {
+    id: `note_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    timestamp: new Date().toISOString(),
+    author: author || "Teknisi/Pengawas",
+    role: role || "Teknisi",
+    category: category || "Tindak Lanjut",
+    content: note.trim()
+  };
+
+  record.workNotesHistory.push(newEntry);
+  record.generalNotes = note.trim(); // Update latest note preview
+
+  return res.json({
+    success: true,
+    message: "Catatan pekerjaan lapangan berhasil ditambahkan dan terekam.",
+    data: record,
+    newEntry
+  });
 });
 
 // RFS: Update Status (e.g. Approved / Review)

@@ -10,7 +10,7 @@ export const FmkaLogo: React.FC<{ className?: string }> = ({ className = "w-16 h
   return (
     <svg
       viewBox="0 0 100 100"
-      className={`${className} shrink-0 drop-shadow-sm select-none`}
+      className={`${className} print:w-11 print:h-11 shrink-0 drop-shadow-sm select-none`}
       xmlns="http://www.w3.org/2000/svg"
       aria-label="Logo Resmi PT. FAJAR MITRA KRIDA ABADI"
     >
@@ -44,10 +44,10 @@ export const FmkaLogo: React.FC<{ className?: string }> = ({ className = "w-16 h
 export const CiqsLogo: React.FC<{ className?: string }> = ({ className = "" }) => {
   return (
     <div className={`flex flex-col items-end justify-center shrink-0 select-none ${className}`}>
-      <span className="text-[10px] sm:text-[11px] font-black tracking-widest text-slate-900 font-sans leading-none mb-0.5">
+      <span className="text-[10px] sm:text-[11px] print:text-[8px] font-black tracking-widest text-slate-900 font-sans leading-none mb-0.5">
         2000:2018
       </span>
-      <div className="flex items-center text-slate-950 font-black tracking-tight text-3xl sm:text-4xl leading-none font-serif">
+      <div className="flex items-center text-slate-950 font-black tracking-tight text-3xl sm:text-4xl print:text-xl leading-none font-serif">
         {/* Huruf C Stencil */}
         <span className="relative inline-block">
           C
@@ -93,22 +93,22 @@ export const FmkaOfficialKop: React.FC<{
     >
       {/* 1. Pita Ungu Khas di Atas Tengah */}
       {showPurpleBanner && (
-        <div className="flex justify-center -mt-1 sm:-mt-2 mb-3 print:mb-2">
-          <div className="h-4 sm:h-5 w-56 sm:w-80 bg-[#50246a] rounded-b-sm shadow-sm print:shadow-none"></div>
+        <div className="flex justify-center -mt-1 sm:-mt-2 mb-3 print:mb-1 print:-mt-1">
+          <div className="h-4 sm:h-5 print:h-2 w-56 sm:w-80 print:w-48 bg-[#50246a] rounded-b-sm shadow-sm print:shadow-none"></div>
         </div>
       )}
 
       {/* 2. Baris Utama: Logo Kiri - Identitas Perusahaan - CIQS Kanan */}
-      <div className="flex items-center justify-between gap-3 sm:gap-6">
+      <div className="flex items-center justify-between gap-3 sm:gap-6 print:gap-2">
         {/* Kiri: Logo Lingkaran FMKA */}
-        <FmkaLogo className="w-16 h-16 sm:w-20 sm:h-20" />
+        <FmkaLogo className="w-16 h-16 sm:w-20 sm:h-20 print:w-11 print:h-11" />
 
         {/* Tengah: Nama & Bidang Perusahaan */}
         <div className="flex-1 text-left sm:text-center pl-1 sm:pl-0">
-          <h1 className="text-xl sm:text-2xl md:text-[26px] font-black tracking-tight text-[#0f2858] uppercase font-sans leading-tight">
+          <h1 className="text-xl sm:text-2xl md:text-[26px] print:text-base font-black tracking-tight text-[#0f2858] uppercase font-sans leading-tight">
             PT. FAJAR MITRA KRIDA ABADI
           </h1>
-          <p className="text-xs sm:text-sm md:text-[15px] italic font-serif text-[#642b73] font-medium tracking-wide mt-1">
+          <p className="text-xs sm:text-sm md:text-[15px] print:text-[10.5px] italic font-serif text-[#642b73] font-medium tracking-wide mt-1 print:mt-0">
             Telecommunication &amp; Civil Contractor
           </p>
         </div>
@@ -118,9 +118,9 @@ export const FmkaOfficialKop: React.FC<{
       </div>
 
       {/* 3. Garis Ganda Pembatas Resmi Dokumen Korporat */}
-      <div className="mt-3 sm:mt-4">
-        <div className="border-b-[3px] border-slate-950 w-full"></div>
-        <div className="border-b-[1px] border-slate-950 w-full mt-[2px]"></div>
+      <div className="mt-3 sm:mt-4 print:mt-1.5">
+        <div className="border-b-[3px] print:border-b-[2px] border-slate-950 w-full"></div>
+        <div className="border-b-[1px] border-slate-950 w-full mt-[2px] print:mt-[1px]"></div>
       </div>
     </div>
   );

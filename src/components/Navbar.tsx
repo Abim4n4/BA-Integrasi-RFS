@@ -1,6 +1,6 @@
 import React from "react";
 import { Sidebar } from "./Sidebar.tsx";
-import { User, ThemeMode } from "../types.ts";
+import { User, ThemeMode, FontSizeMode } from "../types.ts";
 
 interface NavbarProps {
   currentUser: User | null;
@@ -8,6 +8,8 @@ interface NavbarProps {
   onTabChange: (tab: "form" | "table" | "admin" | "gas") => void;
   currentTheme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
+  fontSize?: FontSizeMode;
+  onFontSizeChange?: (mode: FontSizeMode) => void;
   onLogout: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;

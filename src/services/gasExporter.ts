@@ -10,7 +10,7 @@ export const CODE_GS_CONTENT = `/**
  * =========================================================================
  * PORTAL BERITA ACARA READY FOR SERVICE (BA-RFS) - BACKEND (Code.gs)
  * Platform: Google Apps Script (GAS) + Google Sheets + Google Drive
- * Integrasi AI: Google AI Studio (Gemini API - gemini-1.5-flash)
+ * Integrasi AI: Google AI Studio (Gemini API - gemini-2.5-flash)
  * =========================================================================
  */
 
@@ -203,7 +203,7 @@ function getDataBA() {
 }
 
 /**
- * Analisis Bandwidth Otomatis menggunakan Google AI Studio (Gemini API: gemini-1.5-flash)
+ * Analisis Bandwidth Otomatis menggunakan Google AI Studio (Gemini API: gemini-2.5-flash)
  */
 function callGeminiBandwidthAnalysis(item) {
   try {
@@ -237,7 +237,7 @@ function callGeminiBandwidthAnalysis(item) {
       "}\\n" +
       "HANYA kembalikan teks JSON valid murni tanpa markdown triple backticks.";
 
-    var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
     var payload = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {

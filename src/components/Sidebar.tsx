@@ -11,7 +11,7 @@ import {
   Activity,
   Layers
 } from "lucide-react";
-import { User, ThemeMode } from "../types.ts";
+import { User, ThemeMode, FontSizeMode } from "../types.ts";
 import { ThemeSwitcher } from "./ThemeSwitcher.tsx";
 
 interface SidebarProps {
@@ -20,6 +20,8 @@ interface SidebarProps {
   onTabChange: (tab: "form" | "table" | "admin" | "gas") => void;
   currentTheme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
+  fontSize?: FontSizeMode;
+  onFontSizeChange?: (mode: FontSizeMode) => void;
   onLogout: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -33,6 +35,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   currentTheme,
   onThemeChange,
+  fontSize = "waspang",
+  onFontSizeChange,
   onLogout,
   isCollapsed = false,
   onToggleCollapse,
@@ -254,8 +258,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Section: Tools & Status */}
           <div className="space-y-2 pt-2 border-t border-subtle">
             {(!isCollapsed || mobileOpen) && (
-              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted">
-                Pengaturan Tampilan
+              <p className="px-3 text-[9px] font-bold uppercase tracking-wider text-muted">
+                Option
               </p>
             )}
 
@@ -263,6 +267,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className={`px-1 ${isCollapsed && !mobileOpen ? "flex justify-center" : ""}`}>
               <ThemeSwitcher currentTheme={currentTheme} onThemeChange={onThemeChange} />
             </div>
+
+            {/* Font Size Mode (Ramah Waspang Lapangan) */}
+            {(!isCollapsed || mobileOpen) && onFontSizeChange && (
+              <div className="mx-1 p-2.5 rounded-xl surface-elevated border space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-bold text-main">
+                  <span className="flex items-center gap-1.5">
+                    <span>👓</span>
+                    <span>Ukuran Huruf (Waspang)</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-500 font-bold font-mono">
+                    {fontSize === "normal" ? "Normal" : fontSize === "waspang" ? "Besar (+16%)" : "Ekstra (+28%)"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => onFontSizeChange("normal")}
+                    className={`py-1 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                      fontSize === "normal"
+                        ? "bg-slate-700 text-white shadow-xs"
+                        : "surface-card text-muted hover:text-main"
+                    }`}
+                    title="Ukuran Standar (100%)"
+                  >
+                    A Normal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onFontSizeChange("waspang")}
+                    className={`py-1 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                      fontSize === "waspang"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "surface-card text-muted hover:text-main"
+                    }`}
+                    title="Mode Nyaman Waspang (Disarankan)"
+                  >
+                    A+ Besar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onFontSizeChange("extra")}
+                    className={`py-1 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                      fontSize === "extra"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "surface-card text-muted hover:text-main"
+                    }`}
+                    title="Mode Ekstra Jelas (Kacamata)"
+                  >
+                    A++ Ekstra
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Real-time Clock Indicator */}
             {(!isCollapsed || mobileOpen) && (

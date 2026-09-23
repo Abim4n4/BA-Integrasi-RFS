@@ -1,6 +1,6 @@
 {
   "name": "Portal Berita Acara RFS & AI Studio",
   "description": "Portal Berita Acara Ready for Service (RFS) PT. Fajar Mitra Krida Abadi terintegrasi Firebase Firestore & Auth, Google Workspace (Drive, Sheets, Gmail), dan Gemini AI.",
-  "requestFramePermissions": ["geolocation"],
+  "requestFramePermissions": ["geolocation", "camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

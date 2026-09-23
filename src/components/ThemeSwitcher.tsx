@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Palette, Check, Sparkles } from "lucide-react";
+import { Palette, Check, Sparkles, ChevronDown } from "lucide-react";
 import { ThemeMode } from "../types.ts";
 
 interface ThemeSwitcherProps {
@@ -84,38 +84,45 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
   }, []);
 
   return (
-    <div className="relative" ref={dropdownRef} id="theme-switcher-container">
+    <div className="relative w-full" ref={dropdownRef} id="theme-switcher-container">
       <button
         id="theme-switcher-trigger"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all surface-card hover:opacity-90 active:scale-95"
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all surface-card hover:surface-elevated active:scale-98 shadow-xs cursor-pointer"
         title="Ganti Tema Tampilan"
       >
-        <Palette className="w-3.5 h-3.5 accent-color" />
-        <span className="hidden sm:inline font-semibold">{activeThemeObj.name}</span>
-        <div className="flex -space-x-1 items-center">
-          {activeThemeObj.colors.map((c, i) => (
-            <span
-              key={i}
-              className="w-2.5 h-2.5 rounded-full border border-black/20"
-              style={{ backgroundColor: c }}
-            />
-          ))}
+        <div className="flex items-center gap-2 min-w-0">
+          <Palette className="w-3.5 h-3.5 accent-color shrink-0" />
+          <span className="truncate">{activeThemeObj.name}</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            className="w-2.5 h-2.5 rounded-full border border-black/20"
+            style={{
+              backgroundColor: activeThemeObj.colors[1],
+              boxShadow: activeThemeObj.glow ? `0 0 6px ${activeThemeObj.colors[1]}` : undefined
+            }}
+          />
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
         </div>
       </button>
 
       {isOpen && (
         <div
           id="theme-dropdown-menu"
-          className="absolute right-0 mt-2 w-72 rounded-xl p-2 z-50 surface-card shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 border"
+          className="absolute left-0 right-0 mt-1.5 w-full rounded-xl p-1.5 z-50 surface-card shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 border"
         >
           <div className="px-2 py-1.5 mb-1 border-b border-subtle flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              Pilihan Multi-Theme
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+              Tema Tampilan
             </span>
-            <span className="text-[10px] text-dim">6 Preset Aktif</span>
+            <span className="text-[9px] text-dim font-medium">6 Preset</span>
           </div>
 
           <div className="space-y-1">
@@ -129,36 +136,23 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
                     onThemeChange(theme.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-xs transition-all ${
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs transition-all cursor-pointer ${
                     isSelected
                       ? "surface-elevated font-semibold ring-1 accent-border"
                       : "hover:surface-elevated text-muted hover:text-main"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex -space-x-1.5 items-center">
-                      {theme.colors.map((color, idx) => (
-                        <div
-                          key={idx}
-                          className="w-3.5 h-3.5 rounded-full border border-black/30 shadow-sm"
-                          style={{
-                            backgroundColor: color,
-                            boxShadow: theme.glow ? `0 0 8px ${theme.colors[1]}` : undefined
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-main">{theme.name}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full surface-muted text-dim font-mono">
-                          {theme.tag}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-muted line-clamp-1">{theme.desc}</p>
-                    </div>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/20 shadow-xs"
+                      style={{
+                        backgroundColor: theme.colors[1],
+                        boxShadow: theme.glow ? `0 0 7px ${theme.colors[1]}` : undefined
+                      }}
+                    />
+                    <span className="font-medium text-main text-xs truncate">{theme.name}</span>
                   </div>
-                  {isSelected && <Check className="w-4 h-4 accent-color shrink-0 ml-1" />}
+                  {isSelected && <Check className="w-3.5 h-3.5 accent-color shrink-0 ml-1.5" />}
                 </button>
               );
             })}

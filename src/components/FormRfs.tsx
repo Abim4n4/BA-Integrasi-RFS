@@ -25,11 +25,17 @@ import {
   Globe,
   Check,
   LayoutGrid,
-  MonitorCheck
+  MonitorCheck,
+  Cpu,
+  Barcode,
+  Radio,
+  ScanLine,
+  Zap
 } from "lucide-react";
 import { BeritaAcaraRFS, ServiceType, BandwidthUnit, RfsStatus, AiAnalysisResult, User, PocEvidenceItem } from "../types.ts";
 import { DigitalSignaturePad } from "./DigitalSignaturePad.tsx";
-import { DEFAULT_POC_ITEMS, DEFAULT_CLOSING_STATEMENT } from "../data/pocTemplates.ts";
+import { BarcodeScannerModal } from "./BarcodeScannerModal.tsx";
+import { DEFAULT_POC_ITEMS, DEFAULT_CLOSING_STATEMENT, COMPACT_POC_ITEMS, EXTENDED_POC_ITEMS } from "../data/pocTemplates.ts";
 
 interface FormRfsProps {
   currentUser: User | null;
@@ -62,15 +68,20 @@ export const FormRfs: React.FC<FormRfsProps> = ({
     backboneMedia: "Fiber Optic" as 'Wireless' | 'Fiber Optic',
     systems: ["FTTH", "Integrator"] as string[],
     backboneProvider: "Fiberstar",
-    testNotes: "RFS Done, Bandwidth sudah dilakukan pengetestan\n1. Ruang Panel ISP Famika\n2. Setiap unit sudah terpasang rosset",
+    testNotes: "RFS Done, Bandwidth sudah dilakukan pengetestan",
     pocSpeedtest: "500 Mbps",
     pocBrowsing: ["Banking", "Berita", "Games", "Toko Online", "Live Streaming", "Youtube"] as string[],
     // Evident Uji Layanan
     evidentSpeedtest: "",
     evidentRedamanOpm: "",
     evidentPerangkat: "",
-    // Matriks Bukti Uji POC (21 Aplikasi Sesuai Referensi Lapangan)
-    evidentPocGallery: [...DEFAULT_POC_ITEMS] as PocEvidenceItem[],
+    // Detail Pemasangan Perangkat & Interface (Point 3 Checklist)
+    deviceInstalled: true,
+    deviceType: "Huawei SmartAX MA5671A",
+    serialNumber: "ZTEGCA82B391F0",
+    interfaceType: "SFP 1G" as 'SFP 1G' | 'SFP 10G' | 'LAN RJ45',
+    // Matriks Bukti Uji POC (Default 6 Pilar Ringkas Rekomendasi Lapangan, dapat diganti ke 21)
+    evidentPocGallery: [...COMPACT_POC_ITEMS] as PocEvidenceItem[],
     closingStatement: DEFAULT_CLOSING_STATEMENT,
     downloadSpeed: 498.5,
     uploadSpeed: 495.2,
@@ -108,9 +119,62 @@ export const FormRfs: React.FC<FormRfsProps> = ({
     timestamp: string;
   } | null>(null);
 
-  // Live speed ratio calculation
-  const dlRatio = Math.round((Number(formData.downloadSpeed) / Math.max(1, Number(formData.subscribedBandwidth))) * 100);
-  const ulRatio = Math.round((Number(formData.uploadSpeed) / Math.max(1, Number(formData.subscribedBandwidth))) * 100);
+  // Live speed ratio calculation (handling Mbps vs Gbps conversion for ratio comparison)
+  const targetBandwidthInMbps = formData.bandwidthUnit === "Giga" 
+    ? Number(formData.subscribedBandwidth) * 1000 
+    : Number(formData.subscribedBandwidth);
+  const dlRatio = Math.round((Number(formData.downloadSpeed) / Math.max(1, targetBandwidthInMbps)) * 100);
+  const ulRatio = Math.round((Number(formData.uploadSpeed) / Math.max(1, targetBandwidthInMbps)) * 100);
+
+  // Field validation errors state for Device & Serial Number
+  const [deviceValidationErrors, setDeviceValidationErrors] = useState<{
+    deviceType?: string;
+    serialNumber?: string;
+  }>({});
+
+  // Barcode scanner modal state
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState<boolean>(false);
+
+  // Strict format validators
+  // Device Type: Minimum 3 characters, alphanumeric with standard punctuation (- / . _ space)
+  const validateDeviceType = (val: string): string => {
+    if (!val || !val.trim()) {
+      return "Tipe/Model Perangkat wajib diisi (minimal 3 karakter).";
+    }
+    const trimmed = val.trim();
+    if (trimmed.length < 3) {
+      return "Tipe/Model Perangkat terlalu pendek (minimal 3 karakter).";
+    }
+    if (trimmed.length > 80) {
+      return "Tipe/Model Perangkat maksimal 80 karakter.";
+    }
+    // Strict pattern: alphanumeric, spaces, dashes, dots, slashes, plus
+    const validPattern = /^[a-zA-Z0-9\s\-_/+.()]+$/;
+    if (!validPattern.test(trimmed)) {
+      return "Format tidak valid. Gunakan huruf, angka, spasi, atau tanda (- / . _ +).";
+    }
+    return "";
+  };
+
+  // Serial Number: Strict Telco equipment SN format (6-40 alphanumeric chars, dashes, colons for MAC)
+  const validateSerialNumber = (val: string): string => {
+    if (!val || !val.trim()) {
+      return "Serial Number (SN) perangkat wajib diisi.";
+    }
+    const trimmed = val.trim();
+    if (trimmed.length < 5) {
+      return "Serial Number (SN) terlalu pendek (minimal 5 karakter).";
+    }
+    if (trimmed.length > 45) {
+      return "Serial Number (SN) maksimal 45 karakter.";
+    }
+    // Strict pattern: uppercase/lowercase letters, digits, dashes, underscores, colons
+    const validSnPattern = /^[a-zA-Z0-9\-_:.]+$/;
+    if (!validSnPattern.test(trimmed)) {
+      return "Serial Number hanya boleh berisi huruf, angka, tanda hubung (-), titik (.), atau titik dua (:).";
+    }
+    return "";
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -125,16 +189,27 @@ export const FormRfs: React.FC<FormRfsProps> = ({
       }
       return next;
     });
+
+    // Real-time strict validation feedback
+    if (name === "deviceType") {
+      const err = validateDeviceType(value);
+      setDeviceValidationErrors(prev => ({ ...prev, deviceType: err }));
+    }
+    if (name === "serialNumber") {
+      const err = validateSerialNumber(value);
+      setDeviceValidationErrors(prev => ({ ...prev, serialNumber: err }));
+    }
   };
 
   // Quick select capacity
   const handleSelectCapacity = (capacityNum: number, unit: BandwidthUnit) => {
+    const mbps = unit === "Giga" ? capacityNum * 1000 : capacityNum;
     setFormData(prev => ({
       ...prev,
       subscribedBandwidth: capacityNum,
       bandwidthUnit: unit,
-      downloadSpeed: Math.round(capacityNum * 0.98 * 10) / 10,
-      uploadSpeed: Math.round(capacityNum * 0.97 * 10) / 10
+      downloadSpeed: Math.round(mbps * 0.98 * 10) / 10,
+      uploadSpeed: Math.round(mbps * 0.97 * 10) / 10
     }));
   };
 
@@ -183,11 +258,20 @@ export const FormRfs: React.FC<FormRfsProps> = ({
     setFormData(prev => ({ ...prev, [field]: "" }));
   };
 
-  // Reset POC Gallery to 21 Reference Items
-  const handleResetPocDefault = () => {
+  // Reset POC Gallery to 6 Compact Key Evidence Items (Default)
+  const handleSetPocCompact = () => {
     setFormData(prev => ({
       ...prev,
-      evidentPocGallery: [...DEFAULT_POC_ITEMS],
+      evidentPocGallery: [...COMPACT_POC_ITEMS],
+      closingStatement: DEFAULT_CLOSING_STATEMENT
+    }));
+  };
+
+  // Set POC Gallery to 21 Reference Items
+  const handleSetPocExtended = () => {
+    setFormData(prev => ({
+      ...prev,
+      evidentPocGallery: [...EXTENDED_POC_ITEMS],
       closingStatement: DEFAULT_CLOSING_STATEMENT
     }));
   };
@@ -345,6 +429,20 @@ export const FormRfs: React.FC<FormRfsProps> = ({
       return;
     }
 
+    // Strict Device & Serial Number Validation
+    if (formData.deviceInstalled) {
+      const devErr = validateDeviceType(formData.deviceType || "");
+      const snErr = validateSerialNumber(formData.serialNumber || "");
+      if (devErr || snErr) {
+        setDeviceValidationErrors({
+          deviceType: devErr,
+          serialNumber: snErr
+        });
+        setSubmitError(devErr || snErr || "Format Tipe Perangkat atau Serial Number belum valid.");
+        return;
+      }
+    }
+
     if (!sigIsp) {
       setSubmitError("Tanda tangan ISP wajib diisi sebelum dokumen disahkan.");
       return;
@@ -401,12 +499,16 @@ export const FormRfs: React.FC<FormRfsProps> = ({
       backboneMedia: "Fiber Optic",
       systems: ["FTTH", "Integrator"],
       backboneProvider: "Fiberstar",
-      testNotes: "RFS Done, Bandwidth sudah dilakukan pengetestan\n1. Ruang Panel ISP Famika\n2. Setiap unit sudah terpasang rosset",
+      testNotes: "RFS Done, Bandwidth sudah dilakukan pengetestan",
       pocSpeedtest: "500 Mbps",
       pocBrowsing: ["Banking", "Berita", "Games", "Toko Online", "Live Streaming", "Youtube"],
       evidentSpeedtest: "",
       evidentRedamanOpm: "",
       evidentPerangkat: "",
+      deviceInstalled: true,
+      deviceType: "Huawei SmartAX MA5671A",
+      serialNumber: "ZTEGCA82B391F0",
+      interfaceType: "SFP 1G",
       evidentPocGallery: [...DEFAULT_POC_ITEMS],
       closingStatement: DEFAULT_CLOSING_STATEMENT,
       downloadSpeed: 498.6,
@@ -662,31 +764,61 @@ export const FormRfs: React.FC<FormRfsProps> = ({
 
           {/* Preset Kapasitas Cepat & Spesifikasi Infrastruktur Jaringan Sesuai Gambar RFS */}
           <div className="p-4 rounded-xl surface-elevated border space-y-3.5">
-            {/* Shortcut Kapasitas */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-main">Pilihan Cepat Kapasitas:</span>
+            {/* Dropdown Pilihan Cepat Kapasitas */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-subtle">
               <div className="flex items-center gap-2">
-                {[
-                  { label: "500 Mbps", val: 500, unit: "Mbps" as BandwidthUnit },
-                  { label: "1 Gbps", val: 1, unit: "Giga" as BandwidthUnit },
-                  { label: "10 Gbps", val: 10, unit: "Giga" as BandwidthUnit }
-                ].map(preset => {
-                  const isActive = formData.subscribedBandwidth === preset.val && formData.bandwidthUnit === preset.unit;
-                  return (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onClick={() => handleSelectCapacity(preset.val, preset.unit)}
-                      className={`px-3 py-1 text-xs rounded-lg font-mono font-bold transition-all ${
-                        isActive
-                          ? "accent-bg text-white shadow-sm ring-2 ring-emerald-500/30"
-                          : "border surface-card text-muted hover:text-main"
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                })}
+                <Zap className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span className="text-xs font-semibold text-main">Pilihan Cepat Kapasitas:</span>
+              </div>
+
+              <div className="w-full sm:w-auto">
+                <select
+                  id="quick-capacity-select"
+                  value={
+                    [
+                      { val: 100, unit: "Mbps" },
+                      { val: 200, unit: "Mbps" },
+                      { val: 300, unit: "Mbps" },
+                      { val: 500, unit: "Mbps" },
+                      { val: 1, unit: "Giga" },
+                      { val: 2, unit: "Giga" },
+                      { val: 3, unit: "Giga" },
+                      { val: 10, unit: "Giga" }
+                    ].some(p => p.val === formData.subscribedBandwidth && p.unit === formData.bandwidthUnit)
+                      ? `${formData.subscribedBandwidth}-${formData.bandwidthUnit}`
+                      : "custom"
+                  }
+                  onChange={(e) => {
+                    if (e.target.value === "custom" || !e.target.value) return;
+                    const [valStr, unitStr] = e.target.value.split("-");
+                    handleSelectCapacity(Number(valStr), unitStr as BandwidthUnit);
+                  }}
+                  className="w-full sm:w-64 text-xs font-semibold p-2.5 rounded-lg border surface-card text-main focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer font-mono shadow-xs"
+                >
+                  <option value="" disabled>-- Pilih Kapasitas Cepat --</option>
+                  <option value="100-Mbps">100 Mbps</option>
+                  <option value="200-Mbps">200 Mbps</option>
+                  <option value="300-Mbps">300 Mbps</option>
+                  <option value="500-Mbps">500 Mbps</option>
+                  <option value="1-Giga">1 Gbps</option>
+                  <option value="2-Giga">2 Gbps</option>
+                  <option value="3-Giga">3 Gbps</option>
+                  <option value="10-Giga">10 Gbps</option>
+                  {![
+                    { val: 100, unit: "Mbps" },
+                    { val: 200, unit: "Mbps" },
+                    { val: 300, unit: "Mbps" },
+                    { val: 500, unit: "Mbps" },
+                    { val: 1, unit: "Giga" },
+                    { val: 2, unit: "Giga" },
+                    { val: 3, unit: "Giga" },
+                    { val: 10, unit: "Giga" }
+                  ].some(p => p.val === formData.subscribedBandwidth && p.unit === formData.bandwidthUnit) && (
+                    <option value="custom" disabled>
+                      Kustom ({formData.subscribedBandwidth} {formData.bandwidthUnit === "Giga" ? "Gbps" : "Mbps"})
+                    </option>
+                  )}
+                </select>
               </div>
             </div>
 
@@ -746,22 +878,44 @@ export const FormRfs: React.FC<FormRfsProps> = ({
               {/* Jalur Backbone Upstream */}
               <div className="p-3 rounded-lg border surface-card space-y-2">
                 <span className="block text-[11px] font-bold text-main uppercase tracking-wider">
-                  Backbone (Jalur)
+                  Backbone
                 </span>
-                <div className="flex items-center gap-3 text-xs flex-wrap">
-                  {["CBN", "Fiberstar", "Lain - Lain"].map(prov => (
-                    <label key={prov} className="inline-flex items-center gap-1.5 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="backboneProvider"
-                        value={prov}
-                        checked={formData.backboneProvider === prov}
-                        onChange={() => setFormData(prev => ({ ...prev, backboneProvider: prov }))}
-                        className="text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5"
-                      />
-                      <span className="text-main">{prov}</span>
-                    </label>
-                  ))}
+                <div className="space-y-1.5">
+                  <select
+                    value={
+                      formData.backboneProvider === "CBN" || formData.backboneProvider === "Fiberstar"
+                        ? formData.backboneProvider
+                        : "manual"
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "manual") {
+                        setFormData(prev => ({
+                          ...prev,
+                          backboneProvider: (prev.backboneProvider === "CBN" || prev.backboneProvider === "Fiberstar") ? "" : prev.backboneProvider
+                        }));
+                      } else {
+                        setFormData(prev => ({ ...prev, backboneProvider: val }));
+                      }
+                    }}
+                    className="w-full text-xs font-semibold p-2 rounded-lg border surface-card text-main focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="CBN">CBN</option>
+                    <option value="Fiberstar">Fiberstar</option>
+                    <option value="manual">Lainnya / Isi Manual...</option>
+                  </select>
+
+                  {/* Input manual jika memilih opsi manual atau memiliki nilai custom selain CBN & Fiberstar */}
+                  {(formData.backboneProvider !== "CBN" && formData.backboneProvider !== "Fiberstar") && (
+                    <input
+                      type="text"
+                      value={formData.backboneProvider || ""}
+                      onChange={(e) => setFormData(prev => ({ ...prev, backboneProvider: e.target.value }))}
+                      placeholder="Ketik nama backbone manual..."
+                      className="w-full text-xs p-2 rounded-lg border surface-card text-main focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                      autoFocus
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -769,19 +923,21 @@ export const FormRfs: React.FC<FormRfsProps> = ({
 
           {/* Test measurement inputs */}
           <div className="p-4 rounded-xl surface-elevated border space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-bold text-main flex items-center gap-1.5">
-                <Activity className="w-3.5 h-3.5 text-emerald-500" />
+                <Activity className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 Parameter Pengujian Jaringan (Speedtest / RFC 2544 / ITU-T Y.1564)
               </span>
-              <div className="text-[11px] font-mono text-muted">
+              <div className="text-[11px] font-mono text-muted shrink-0">
                 Rasio: <span className="font-bold text-emerald-500">{dlRatio}% DL</span> / <span className="font-bold text-sky-500">{ulRatio}% UL</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <div>
-                <label className="block text-[11px] font-medium text-muted mb-1">Download (Mbps)</label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+              <div className="flex flex-col justify-end">
+                <label className="text-[11px] font-medium text-muted mb-1.5 h-8 flex items-end leading-tight">
+                  <span>Download <span className="text-[10px] text-dim font-normal">(Mbps)</span></span>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -793,8 +949,10 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-medium text-muted mb-1">Upload (Mbps)</label>
+              <div className="flex flex-col justify-end">
+                <label className="text-[11px] font-medium text-muted mb-1.5 h-8 flex items-end leading-tight">
+                  <span>Upload <span className="text-[10px] text-dim font-normal">(Mbps)</span></span>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -806,8 +964,10 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-medium text-muted mb-1">Ping Latency (ms)</label>
+              <div className="flex flex-col justify-end">
+                <label className="text-[11px] font-medium text-muted mb-1.5 h-8 flex items-end leading-tight">
+                  <span>Ping Latency <span className="text-[10px] text-dim font-normal">(ms)</span></span>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -818,8 +978,10 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-medium text-muted mb-1">Jitter (ms)</label>
+              <div className="flex flex-col justify-end">
+                <label className="text-[11px] font-medium text-muted mb-1.5 h-8 flex items-end leading-tight">
+                  <span>Jitter <span className="text-[10px] text-dim font-normal">(ms)</span></span>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -830,8 +992,10 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 />
               </div>
 
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-[11px] font-medium text-muted mb-1">Packet Loss (%)</label>
+              <div className="col-span-2 sm:col-span-1 flex flex-col justify-end">
+                <label className="text-[11px] font-medium text-muted mb-1.5 h-8 flex items-end leading-tight">
+                  <span>Packet Loss <span className="text-[10px] text-dim font-normal">(%)</span></span>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -855,14 +1019,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
           </div>
 
           {/* AI Pre-Check Trigger Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-            <div className="text-xs text-muted flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>
-                Verifikasi performa secara instan sebelum disimpan menggunakan <strong>Gemini AI</strong>.
-              </span>
-            </div>
-
+          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={handleRunAiAnalysis}
@@ -935,30 +1092,53 @@ export const FormRfs: React.FC<FormRfsProps> = ({
             <div className="flex items-center justify-between border-b border-subtle pb-2">
               <span className="text-xs font-bold text-main flex items-center gap-1.5 uppercase tracking-wider">
                 <Globe className="w-3.5 h-3.5 text-emerald-500" />
-                POC (Proof of Concept) & Uji Layanan Aplikasi
+                Tes Layanan
               </span>
               <span className="text-[11px] text-muted">
                 {formData.pocBrowsing?.length || 0} aplikasi teruji aktif
               </span>
             </div>
 
-            {/* Target Speedtest */}
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              <span className="font-semibold text-main w-24">Speedtest:</span>
-              <div className="flex items-center gap-4">
-                {["100 Mbps", "500 Mbps", "1 Gbps"].map(sp => (
-                  <label key={sp} className="inline-flex items-center gap-1.5 cursor-pointer font-mono">
-                    <input
-                      type="radio"
-                      name="pocSpeedtest"
-                      value={sp}
-                      checked={formData.pocSpeedtest === sp}
-                      onChange={() => setFormData(prev => ({ ...prev, pocSpeedtest: sp }))}
-                      className="text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5"
-                    />
-                    <span className="text-main font-medium">{sp}</span>
-                  </label>
-                ))}
+            {/* Target Speedtest (Dropdown & Manual dalam 1 kolom) */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+              <span className="font-semibold text-main sm:w-24 shrink-0">Speedtest:</span>
+              <div className="flex items-center gap-2 flex-1 max-w-md">
+                <select
+                  value={
+                    ["100 Mbps", "500 Mbps", "1 Gbps"].includes(formData.pocSpeedtest || "")
+                      ? formData.pocSpeedtest
+                      : "manual"
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "manual") {
+                      setFormData(prev => ({
+                        ...prev,
+                        pocSpeedtest: ["100 Mbps", "500 Mbps", "1 Gbps"].includes(prev.pocSpeedtest || "") ? "" : prev.pocSpeedtest
+                      }));
+                    } else {
+                      setFormData(prev => ({ ...prev, pocSpeedtest: val }));
+                    }
+                  }}
+                  className="text-xs font-semibold p-2 rounded-lg border surface-card text-main focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer font-mono shrink-0"
+                >
+                  <option value="100 Mbps">100 Mbps</option>
+                  <option value="500 Mbps">500 Mbps</option>
+                  <option value="1 Gbps">1 Gbps</option>
+                  <option value="manual">Isi Manual...</option>
+                </select>
+
+                {/* Input manual langsung dalam kolom yang sama */}
+                {(!["100 Mbps", "500 Mbps", "1 Gbps"].includes(formData.pocSpeedtest || "")) && (
+                  <input
+                    type="text"
+                    value={formData.pocSpeedtest || ""}
+                    onChange={(e) => setFormData(prev => ({ ...prev, pocSpeedtest: e.target.value }))}
+                    placeholder="Contoh: 300 Mbps / 2 Gbps"
+                    className="flex-1 text-xs p-2 rounded-lg border surface-card text-main focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+                    autoFocus
+                  />
+                )}
               </div>
             </div>
 
@@ -990,16 +1170,51 @@ export const FormRfs: React.FC<FormRfsProps> = ({
             </div>
 
             {/* Keterangan Fisik Lapangan */}
-            <div className="pt-2 border-t border-subtle">
-              <label className="block text-[11px] font-bold text-main uppercase tracking-wider mb-1.5">
-                Keterangan & Catatan Instalasi Lapangan
-              </label>
+            <div className="pt-2 border-t border-subtle space-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                <label className="block text-[11px] font-bold text-main uppercase tracking-wider">
+                  Keterangan &amp; Catatan Instalasi Lapangan
+                </label>
+                <div className="flex items-center gap-1 flex-wrap text-[10px]">
+                  <span className="text-muted">Template Cepat:</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      testNotes: "RFS Done, Bandwidth sudah dilakukan pengetestan"
+                    }))}
+                    className="px-2 py-0.5 rounded border surface-card text-muted hover:text-emerald-500 hover:border-emerald-500/40 transition-colors cursor-pointer"
+                  >
+                    Standar Lapangan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      testNotes: (prev.testNotes ? prev.testNotes + "\n" : "") + "• Pengukuran redaman OPM stabil di -18.2 dBm, port ONT aktif normal."
+                    }))}
+                    className="px-2 py-0.5 rounded border surface-card text-muted hover:text-emerald-500 hover:border-emerald-500/40 transition-colors cursor-pointer"
+                  >
+                    + Redaman Optimal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      testNotes: (prev.testNotes ? prev.testNotes + "\n" : "") + "• Patch cord OTB rapi, label kabel terpasang, tagging lokasi selesai."
+                    }))}
+                    className="px-2 py-0.5 rounded border surface-card text-muted hover:text-emerald-500 hover:border-emerald-500/40 transition-colors cursor-pointer"
+                  >
+                    + Tagging & Kerapian
+                  </button>
+                </div>
+              </div>
               <textarea
                 name="testNotes"
                 rows={2}
                 value={formData.testNotes}
                 onChange={handleInputChange}
-                placeholder="Contoh: RFS Done, Bandwidth sudah dilakukan pengetestan&#10;1. Ruang Panel ISP Famika&#10;2. Setiap unit sudah terpasang rosset"
+                placeholder="Contoh: RFS Done, Bandwidth sudah dilakukan pengetestan"
                 className="w-full text-xs p-2.5 rounded-lg border surface-card text-main focus:ring-1 focus:ring-emerald-500 font-mono resize-none leading-relaxed"
               />
             </div>
@@ -1010,14 +1225,9 @@ export const FormRfs: React.FC<FormRfsProps> = ({
             <div className="flex items-center justify-between border-b border-subtle pb-2">
               <div className="flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-sky-500" />
-                <div>
-                  <h4 className="text-xs font-bold text-main uppercase tracking-wider">
-                    Evident Pengujian Layanan (Foto / Tangkapan Layar)
-                  </h4>
-                  <p className="text-[11px] text-muted">
-                    Lampiran digital opsional untuk validasi Waspang & Customer
-                  </p>
-                </div>
+                <h4 className="text-xs font-bold text-main uppercase tracking-wider">
+                  Evident Pengujian Layanan (Foto / Tangkapan Layar)
+                </h4>
               </div>
               <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
                 Maks. 5 MB / foto
@@ -1026,10 +1236,9 @@ export const FormRfs: React.FC<FormRfsProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
               {/* Slot 1: Speedtest Screenshot */}
-              <div className="p-3 rounded-xl border surface-card flex flex-col justify-between space-y-2">
+              <div className="p-3 rounded-xl border surface-card flex flex-col justify-between space-y-2 text-center">
                 <div>
-                  <span className="block text-[11px] font-bold text-main">1. Tangkapan Layar Speedtest</span>
-                  <p className="text-[10px] text-muted">Bukti throughput & latency resmi</p>
+                  <span className="block text-[11px] font-bold text-main text-center">1. Tangkapan Layar Speedtest</span>
                 </div>
 
                 {formData.evidentSpeedtest ? (
@@ -1051,8 +1260,8 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 ) : (
                   <label className="flex flex-col items-center justify-center h-28 border border-dashed rounded-lg border-subtle hover:border-emerald-500/50 cursor-pointer bg-slate-500/5 hover:bg-slate-500/10 transition-all">
                     <Upload className="w-5 h-5 text-muted mb-1" />
-                    <span className="text-[11px] font-medium text-main">Unggah Speedtest</span>
-                    <span className="text-[9px] text-muted">PNG / JPG</span>
+                    <span className="text-[11px] font-medium text-main text-center">Unggah Speedtest</span>
+                    <span className="text-[9px] text-muted text-center">PNG / JPG</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -1064,10 +1273,9 @@ export const FormRfs: React.FC<FormRfsProps> = ({
               </div>
 
               {/* Slot 2: OPM Redaman / ONT */}
-              <div className="p-3 rounded-xl border surface-card flex flex-col justify-between space-y-2">
+              <div className="p-3 rounded-xl border surface-card flex flex-col justify-between space-y-2 text-center">
                 <div>
-                  <span className="block text-[11px] font-bold text-main">2. Redaman Optik (OPM) / ONT</span>
-                  <p className="text-[10px] text-muted">Foto nilai dBm atau lampu PON ONT</p>
+                  <span className="block text-[11px] font-bold text-main text-center">2. Redaman Optik (OPM) / ONT</span>
                 </div>
 
                 {formData.evidentRedamanOpm ? (
@@ -1089,8 +1297,8 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 ) : (
                   <label className="flex flex-col items-center justify-center h-28 border border-dashed rounded-lg border-subtle hover:border-emerald-500/50 cursor-pointer bg-slate-500/5 hover:bg-slate-500/10 transition-all">
                     <Upload className="w-5 h-5 text-muted mb-1" />
-                    <span className="text-[11px] font-medium text-main">Unggah Foto OPM</span>
-                    <span className="text-[9px] text-muted">PNG / JPG</span>
+                    <span className="text-[11px] font-medium text-main text-center">Unggah Foto OPM</span>
+                    <span className="text-[9px] text-muted text-center">PNG / JPG</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -1101,18 +1309,17 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 )}
               </div>
 
-              {/* Slot 3: Titik Rosset / Perangkat */}
-              <div className="p-3 rounded-xl border surface-card flex flex-col justify-between space-y-2">
+              {/* Slot 3: Port OTB / Uplink */}
+              <div className="p-3 rounded-xl border surface-card flex flex-col justify-between space-y-2 text-center">
                 <div>
-                  <span className="block text-[11px] font-bold text-main">3. Rosset / Ruang Panel Unit</span>
-                  <p className="text-[10px] text-muted">Fisik kabel & terminasi terpasang</p>
+                  <span className="block text-[11px] font-bold text-main text-center">3. Port OTB / Uplink</span>
                 </div>
 
                 {formData.evidentPerangkat ? (
                   <div className="relative rounded-lg overflow-hidden border border-subtle group">
                     <img
                       src={formData.evidentPerangkat}
-                      alt="Evident Perangkat"
+                      alt="Evident Port OTB / Uplink"
                       className="w-full h-28 object-contain bg-black/5 dark:bg-black/30"
                     />
                     <button
@@ -1127,8 +1334,8 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 ) : (
                   <label className="flex flex-col items-center justify-center h-28 border border-dashed rounded-lg border-subtle hover:border-emerald-500/50 cursor-pointer bg-slate-500/5 hover:bg-slate-500/10 transition-all">
                     <Upload className="w-5 h-5 text-muted mb-1" />
-                    <span className="text-[11px] font-medium text-main">Unggah Fisik Rosset</span>
-                    <span className="text-[9px] text-muted">PNG / JPG</span>
+                    <span className="text-[11px] font-medium text-main text-center">Unggah Foto Port OTB / Uplink</span>
+                    <span className="text-[9px] text-muted text-center">PNG / JPG</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -1139,29 +1346,229 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 )}
               </div>
             </div>
+
+            {/* KOMPONEN PEMASANGAN PERANGKAT & INTERFACE (CHECKLIST LAPANGAN POINT 3) */}
+            <div className="mt-4 pt-3.5 border-t border-subtle space-y-3.5 bg-slate-500/5 p-3.5 rounded-xl border">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-emerald-500" />
+                  <h5 className="text-xs font-bold text-main uppercase tracking-wider">
+                    Spesifikasi Perangkat Terpasang &amp; Interface Uplink
+                  </h5>
+                </div>
+
+                {/* Toggle Status Pemasangan Perangkat */}
+                <div className="flex items-center gap-2 text-xs">
+                  <div className="inline-flex rounded-lg border border-subtle p-0.5 bg-slate-100 dark:bg-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, deviceInstalled: true }))}
+                      className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                        formData.deviceInstalled
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "text-muted hover:text-main"
+                      }`}
+                    >
+                      Ada Perangkat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, deviceInstalled: false }))}
+                      className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                        !formData.deviceInstalled
+                          ? "bg-slate-600 text-white shadow-sm"
+                          : "text-muted hover:text-main"
+                      }`}
+                    >
+                      Tidak Ada
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {formData.deviceInstalled && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+                  {/* Field 1: Tipe / Model Perangkat */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-main flex items-center gap-1">
+                        <Server className="w-3 h-3 text-emerald-500" />
+                        Tipe / Model Perangkat <span className="text-rose-500">*</span>
+                      </label>
+                      <span className="text-[9.5px] font-mono text-muted">
+                        {(formData.deviceType || "").length}/80
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="deviceType"
+                        value={formData.deviceType || ""}
+                        onChange={handleInputChange}
+                        placeholder="Misal: Huawei SmartAX MA5671A / ZTE F660"
+                        className={`w-full text-xs p-2.5 rounded-lg border surface-card text-main focus:outline-none transition-all ${
+                          deviceValidationErrors.deviceType
+                            ? "border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-500/5"
+                            : "border-subtle focus:ring-1 focus:ring-emerald-500"
+                        }`}
+                      />
+                    </div>
+                    {deviceValidationErrors.deviceType && (
+                      <p className="text-[10px] text-rose-500 font-medium flex items-center gap-1 animate-in fade-in">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        {deviceValidationErrors.deviceType}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Field 2: Serial Number Perangkat with Barcode Scanner Button */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-main flex items-center gap-1">
+                        <Barcode className="w-3.5 h-3.5 text-sky-500" />
+                        Serial Number (SN) <span className="text-rose-500">*</span>
+                      </label>
+                      <span className="text-[9.5px] font-mono text-muted">
+                        {(formData.serialNumber || "").length}/45
+                      </span>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        name="serialNumber"
+                        value={formData.serialNumber || ""}
+                        onChange={handleInputChange}
+                        placeholder="Misal: ZTEGCA82B391F0 / SN-2026-X99"
+                        className={`w-full text-xs p-2.5 pr-10 rounded-lg border surface-card text-main font-mono uppercase focus:outline-none transition-all ${
+                          deviceValidationErrors.serialNumber
+                            ? "border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-500/5"
+                            : "border-subtle focus:ring-1 focus:ring-emerald-500"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsBarcodeScannerOpen(true)}
+                        title="Scan Barcode / SN via Kamera atau Foto Label"
+                        className="absolute right-1.5 p-1.5 rounded-md bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors cursor-pointer border border-sky-500/20 flex items-center gap-1"
+                      >
+                        <ScanLine className="w-4 h-4" />
+                        <span className="sr-only sm:not-sr-only text-[10px] font-bold font-sans pr-0.5">Scan</span>
+                      </button>
+                    </div>
+                    {deviceValidationErrors.serialNumber ? (
+                      <p className="text-[10px] text-rose-500 font-medium flex items-center gap-1 animate-in fade-in">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        {deviceValidationErrors.serialNumber}
+                      </p>
+                    ) : (
+                      <div className="flex items-center justify-end text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => setIsBarcodeScannerOpen(true)}
+                          className="text-sky-600 dark:text-sky-400 font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <ScanLine className="w-3 h-3" />
+                          Scan Barcode SN
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Field 3: Radio Button Interface SFP 1G, SFP 10G, atau LAN RJ45 */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-main flex items-center gap-1">
+                      <Radio className="w-3.5 h-3.5 text-amber-500" />
+                      Interface / Uplink <span className="text-rose-500">*</span>
+                    </label>
+
+                    <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+                      {[
+                        { id: "SFP 1G", label: "SFP 1G", desc: "Optik BiDi 1G" },
+                        { id: "SFP 10G", label: "SFP 10G", desc: "SFP+ 10 Gbps" },
+                        { id: "LAN RJ45", label: "LAN RJ45", desc: "Port GE UTP" }
+                      ].map((item) => {
+                        const isSelected = formData.interfaceType === item.id;
+                        return (
+                          <label
+                            key={item.id}
+                            className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center cursor-pointer transition-all ${
+                              isSelected
+                                ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs"
+                                : "surface-card border-subtle text-muted hover:text-main hover:border-emerald-500/20"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="interfaceType"
+                              value={item.id}
+                              checked={isSelected}
+                              onChange={() => setFormData(prev => ({ ...prev, interfaceType: item.id as 'SFP 1G' | 'SFP 10G' | 'LAN RJ45' }))}
+                              className="sr-only"
+                            />
+                            <div className="flex items-center gap-1">
+                              <span className={`w-3 h-3 rounded-full border flex items-center justify-center ${
+                                isSelected ? "border-emerald-600 bg-emerald-600" : "border-slate-400"
+                              }`}>
+                                {isSelected && <span className="w-1.5 h-1.5 bg-white rounded-full" />}
+                              </span>
+                              <span className="text-xs">{item.label}</span>
+                            </div>
+                            <span className="text-[9px] font-normal text-muted mt-0.5">
+                              {item.desc}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* MATRIKS EVIDENT PENGUJIAN POC BROWSING (21 APLIKASI STANDAR TELCO SESUAI REFERENSI LAPANGAN) */}
+          {/* MATRIKS EVIDENT PENGUJIAN POC BROWSING */}
           <div className="p-4 rounded-xl surface-elevated border space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-subtle pb-3">
               <div className="flex items-center gap-2">
                 <LayoutGrid className="w-4 h-4 text-emerald-500" />
-                <div>
+                <div className="flex items-center gap-2">
                   <h4 className="text-xs font-bold text-main uppercase tracking-wider">
-                    Matriks Evident Pengujian POC & Browsing (21 Aplikasi Standar Lapangan)
+                    EVIDENT MATRIX HASIL PENGUJIAN POC &amp; BROWSING LAYANAN
                   </h4>
-                  <p className="text-[11px] text-muted">
-                    Daftar referensi pengujian: Speedtest, Perbankan, Berita, Games, Marketplace, Streaming, dan Video Conference
-                  </p>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30">
+                    {(formData.evidentPocGallery || []).length} Item Aktif
+                  </span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleResetPocDefault}
-                className="self-start sm:self-auto text-[11px] font-semibold px-2.5 py-1 rounded-lg border surface-card text-muted hover:text-emerald-500 hover:border-emerald-500/40 transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <span>Muat Ulang 21 Item Standar</span>
-              </button>
+
+              {/* Mode Selector Presets: 6 Item Ringkas (Rekomendasi) vs 21 Item Komprehensif */}
+              <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={handleSetPocCompact}
+                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+                    (formData.evidentPocGallery || []).length <= COMPACT_POC_ITEMS.length
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                      : "surface-card border-subtle text-muted hover:text-main"
+                  }`}
+                  title="Gunakan 6 item kunci perwakilan kategori (Efisien, cepat & pas 1 lembar)"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Mode Efisien (6 Pilar Utama)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSetPocExtended}
+                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+                    (formData.evidentPocGallery || []).length > COMPACT_POC_ITEMS.length
+                      ? "bg-slate-700 text-white border-slate-700 shadow-xs"
+                      : "surface-card border-subtle text-muted hover:text-main"
+                  }`}
+                  title="Gunakan 21 daftar pengujian lengkap"
+                >
+                  <span>Lengkap (21 Item)</span>
+                </button>
+              </div>
             </div>
 
             {/* Grid 21 Kartu Evident POC */}
@@ -1255,7 +1662,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
             {/* Kalimat Penutup Resmi Lapangan Sesuai Dokumen RFS */}
             <div className="pt-3 border-t border-subtle space-y-1.5">
               <label className="block text-[11px] font-bold text-main uppercase tracking-wider">
-                Kalimat Penutup / Pernyataan Akhir Hasil Pengujian
+                Pernyataan Akhir Hasil Pengujian
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -1482,6 +1889,23 @@ export const FormRfs: React.FC<FormRfsProps> = ({
           </button>
         </div>
       </form>
+
+      {/* Barcode Scanner Modal Component */}
+      <BarcodeScannerModal
+        isOpen={isBarcodeScannerOpen}
+        onClose={() => setIsBarcodeScannerOpen(false)}
+        onScanSuccess={(scannedSN) => {
+          setFormData(prev => ({
+            ...prev,
+            serialNumber: scannedSN
+          }));
+          const err = validateSerialNumber(scannedSN);
+          setDeviceValidationErrors(prev => ({
+            ...prev,
+            serialNumber: err
+          }));
+        }}
+      />
     </div>
   );
 };

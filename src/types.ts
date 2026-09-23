@@ -6,6 +6,8 @@ export type ThemeMode =
   | 'purple-neon' 
   | 'blue-neon';
 
+export type FontSizeMode = 'normal' | 'waspang' | 'extra';
+
 export type UserRole = 'admin' | 'user';
 
 export interface User {
@@ -40,6 +42,15 @@ export interface PocEvidenceItem {
   image?: string; // Optional custom screenshot Base64
   latencyMs?: number;
   notes?: string;
+}
+
+export interface WorkNoteEntry {
+  id: string;
+  timestamp: string; // ISO or formatted date-time
+  author: string; // Nama pembuat catatan
+  role: string; // e.g. Teknisi, Waspang, Admin, PIC Customer
+  category: 'Instalasi' | 'Pengujian' | 'Waspang' | 'Kendala' | 'Tindak Lanjut' | 'Umum';
+  content: string; // Isi catatan pekerjaan lapangan
 }
 
 export interface AiAnalysisResult {
@@ -93,6 +104,11 @@ export interface BeritaAcaraRFS {
   evidentSpeedtest?: string; // Foto/Screenshot Speedtest
   evidentRedamanOpm?: string; // Foto Redaman Optik (OPM) / ONT
   evidentPerangkat?: string; // Foto Perangkat / Rosset Unit
+  // Detail Pemasangan Perangkat & Interface (Checklist Lapangan Point 3)
+  deviceInstalled?: boolean; // Ada / Tidak Pemasangan Perangkat
+  deviceType?: string; // Tipe/Model Perangkat (e.g., Huawei SmartAX MA5671A)
+  serialNumber?: string; // Serial Number Perangkat (e.g., ZTEGCA82B391F0)
+  interfaceType?: 'SFP 1G' | 'SFP 10G' | 'LAN RJ45' | string; // Tipe Interface Uplink/Handover
   // Galeri Matriks Pengujian POC (21 Item Browser Sesuai Referensi Lapangan)
   evidentPocGallery?: PocEvidenceItem[];
   closingStatement?: string; // Teks Penutup Resmi Lapangan
@@ -109,6 +125,8 @@ export interface BeritaAcaraRFS {
   // Status & Notes
   status: RfsStatus;
   generalNotes?: string;
+  // Riwayat Catatan & Log Pekerjaan Lapangan (Audit & Work History)
+  workNotesHistory?: WorkNoteEntry[];
   // 3 Blok Tanda Tangan Digital Pihak Mengetahui (Base64 data URLs)
   signatureIsp?: string;
   signatureWaspang?: string;

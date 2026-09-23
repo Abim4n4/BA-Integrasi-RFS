@@ -59,10 +59,8 @@ export async function testFirestoreConnection(): Promise<boolean> {
   try {
     await getDocFromServer(doc(db, "test", "connection"));
     return true;
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("the client is offline")) {
-      console.warn("Firestore connection check: client is offline or starting up.");
-    }
+  } catch (_error) {
+    // Normal during initial socket handshake/cold start, not an application error
     return false;
   }
 }

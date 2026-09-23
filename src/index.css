@@ -127,6 +127,45 @@
     --input-border: #2563eb;
   }
 
+  html {
+    font-size: 16.5px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html[data-font-size="normal"] {
+    font-size: 15.5px;
+  }
+
+  html[data-font-size="waspang"] {
+    font-size: 18px; /* Mode Ramah Waspang (+16% lebih besar dan nyaman) */
+  }
+
+  html[data-font-size="extra"] {
+    font-size: 20px; /* Mode Ekstra Jelas (+28% sangat terbaca di lapangan) */
+  }
+
+  /* Ergonomi Waspang Senior: Input, Select, Textarea lebih lega & mudah ditekan */
+  html[data-font-size="waspang"] input,
+  html[data-font-size="waspang"] select,
+  html[data-font-size="waspang"] textarea,
+  html[data-font-size="extra"] input,
+  html[data-font-size="extra"] select,
+  html[data-font-size="extra"] textarea {
+    min-height: 42px;
+    font-size: 0.95rem;
+  }
+
+  html[data-font-size="waspang"] label,
+  html[data-font-size="extra"] label {
+    font-weight: 700 !important;
+    font-size: 0.92rem;
+  }
+
+  html[data-font-size="waspang"] table,
+  html[data-font-size="extra"] table {
+    font-size: 0.92rem;
+  }
+
   body {
     background-color: var(--bg-page);
     color: var(--text-main);
@@ -190,21 +229,33 @@
 }
 
 /* =========================================================================
-   PRINT MEDIA STYLING FOR OFFICIAL BERITA ACARA RFS
+   PRINT MEDIA STYLING FOR OFFICIAL BERITA ACARA RFS (STRICT 2-PAGE A4 FIT)
    ========================================================================= */
 @page {
   size: A4 portrait;
-  margin: 12mm 10mm;
+  margin: 6mm 8mm 6mm 8mm;
 }
 
 @media print {
+  /* Reset All Transitions, Animations, Filters & Stacking Contexts */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+
   /* Reset Root, HTML, Body */
   html,
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 10pt !important;
-    line-height: 1.35 !important;
+    font-size: 9pt !important;
+    line-height: 1.25 !important;
     width: 100% !important;
     min-width: 100% !important;
     height: auto !important;
@@ -235,38 +286,40 @@
     display: block !important;
   }
 
-  /* Hilangkan posisi fixed, scroll viewport, dan batasan ukuran pada wrapper modal */
+  /* Hilangkan posisi fixed, scroll viewport, dan batasan ukuran pada wrapper modal & card */
   div[class*="fixed inset-0"],
   .modal-backdrop,
-  .modal-overlay {
+  .modal-overlay,
+  .surface-card,
+  .print-document-container,
+  #printable-rfs-area {
     position: static !important;
     background: transparent !important;
     backdrop-filter: none !important;
+    filter: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-    display: block !important;
-  }
-
-  /* Kontener Utama Dokumen Cetak */
-  .surface-card,
-  .print-document-container {
-    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
     min-height: auto !important;
     max-height: none !important;
     overflow: visible !important;
+    display: block !important;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
+  }
+
+  .sheet-card {
     background: #ffffff !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .print-document {
@@ -283,7 +336,96 @@
     overflow: visible !important;
   }
 
-  /* Cegah pemotongan ganjil antar halaman (break-inside avoid) */
+  /* Kontrol Lembar Halaman 1 (Strict Halaman 1) */
+  .print-page-1 {
+    display: block !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-before: auto !important;
+    break-before: auto !important;
+    clear: both !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    zoom: 0.88;
+  }
+
+  /* Pemisah Halaman Eksplisit (Hard Page Break) */
+  .print-page-break {
+    display: block !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    page-break-before: always !important;
+    break-before: page !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    clear: both !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Kontrol Lembar Halaman 2 (Strict Halaman 2) */
+  .print-page-2 {
+    display: block !important;
+    page-break-before: always !important;
+    break-before: page !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+    clear: both !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    zoom: 0.88;
+  }
+
+  /* Filter Mode Target Halaman Cetak */
+  body.print-mode-page1 .print-page-2,
+  body.print-mode-page1 .print-page-break,
+  .print-mode-page1 .print-page-2,
+  .print-mode-page1 .print-page-break {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body.print-mode-page1 .print-page-1,
+  .print-mode-page1 .print-page-1 {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  body.print-mode-page2 .print-page-1,
+  body.print-mode-page2 .print-page-break,
+  .print-mode-page2 .print-page-1,
+  .print-mode-page2 .print-page-break {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body.print-mode-page2 .print-page-2,
+  .print-mode-page2 .print-page-2 {
+    page-break-before: auto !important;
+    break-before: auto !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    border-top: none !important;
+  }
+
+  /* Skala Kerapatan Cetak (Zoom Density) */
+  .print-scale-compact {
+    zoom: 0.90;
+  }
+  .print-scale-ultra {
+    zoom: 0.82;
+  }
+  .print-scale-normal {
+    zoom: 1;
+  }
+
+  /* Cegah pemotongan ganjil antar elemen tabel & section */
   .print-section,
   .print-avoid-break,
   .print-header-section,
@@ -302,7 +444,7 @@
   .print-table {
     border-collapse: collapse !important;
     width: 100% !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 4px !important;
   }
 
   table th,
@@ -310,7 +452,7 @@
   .print-table th,
   .print-table td {
     border: 1px solid #64748b !important;
-    padding: 4px 6px !important;
+    padding: 2.5px 5px !important;
     color: #000000 !important;
     background-color: transparent !important;
   }
@@ -323,11 +465,11 @@
     print-color-adjust: exact !important;
   }
 
-  /* Blok Tanda Tangan */
+  /* Blok Tanda Tangan Kompak */
   .signature-box {
     border: 1px solid #64748b !important;
     height: auto !important;
-    min-height: 140px !important;
+    min-height: 80px !important;
     background: #ffffff !important;
   }
 }

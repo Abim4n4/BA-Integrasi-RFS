@@ -1,6 +1,68 @@
 import { PocEvidenceItem } from "../types.ts";
 
-export const DEFAULT_POC_ITEMS: PocEvidenceItem[] = [
+// 6 Pilar Kunci Pengujian Efisien Standar Telco (1 Item per Kategori Utama)
+export const COMPACT_POC_ITEMS: PocEvidenceItem[] = [
+  {
+    id: "poc-1",
+    category: "Speedtest",
+    title: "Speedtest CBN & Global",
+    url: "cbn.id/speedtest",
+    status: "Pass",
+    latencyMs: 2,
+    notes: "Throughput simetris sesuai kapasitas paket langganan, ping 2 ms, loss 0%"
+  },
+  {
+    id: "poc-4",
+    category: "Banking",
+    title: "KlikBCA (Bank BCA)",
+    url: "klikbca.com",
+    status: "Pass",
+    latencyMs: 6,
+    notes: "Layanan transaksi internet banking BCA normal & aman (protokol SSL valid)"
+  },
+  {
+    id: "poc-9",
+    category: "Berita",
+    title: "Detik.com",
+    url: "detik.com",
+    status: "Pass",
+    latencyMs: 4,
+    notes: "Portal berita nasional & CDN konten web lokal render cepat instan"
+  },
+  {
+    id: "poc-14",
+    category: "Toko Online",
+    title: "Tokopedia",
+    url: "tokopedia.com",
+    status: "Pass",
+    latencyMs: 5,
+    notes: "Koneksi gateway e-commerce & katalog belanja online lancar responsif"
+  },
+  {
+    id: "poc-19",
+    category: "Streaming",
+    title: "YouTube HD / 4K",
+    url: "youtube.com",
+    status: "Pass",
+    latencyMs: 4,
+    notes: "Playback video Ultra HD 1080p/4K instan tanpa jeda buffering"
+  },
+  {
+    id: "poc-21",
+    category: "Conference",
+    title: "Zoom Cloud Meetings",
+    url: "zoom.us",
+    status: "Pass",
+    latencyMs: 8,
+    notes: "Akses ruang video conference call jernih, latency stabil & jitter < 1 ms"
+  }
+];
+
+// Default sekarang menggunakan 6 item efisien agar tidak kebanyakan
+export const DEFAULT_POC_ITEMS: PocEvidenceItem[] = [...COMPACT_POC_ITEMS];
+
+// Daftar Lengkap 21 Item Komprehensif (Opsional jika dibutuhkan audit mendalam)
+export const EXTENDED_POC_ITEMS: PocEvidenceItem[] = [
   // Kategori 1: Speedtest & Provider
   {
     id: "poc-1",
@@ -207,3 +269,38 @@ export const DEFAULT_POC_ITEMS: PocEvidenceItem[] = [
 
 export const DEFAULT_CLOSING_STATEMENT = 
   "Demikian RFS ini dilakukan dengan pengecekan pada kapasitas yang sudah sesuai pada report tersebut.";
+
+/**
+ * Helper untuk menyeleksi 6 item pengujian kunci (1 per pilar utama) 
+ * jika dokumen memiliki daftar panjang agar tampilan lampiran efisien & tidak kebanyakan.
+ */
+export function getCompactPocItems(items: PocEvidenceItem[]): PocEvidenceItem[] {
+  if (!items || items.length <= 6) return items || [];
+
+  const targetCategories = ["Speedtest", "Banking", "Berita", "Toko Online", "Streaming", "Conference"];
+  const compact: PocEvidenceItem[] = [];
+  const pickedIds = new Set<string>();
+
+  // 1. Coba ambil 1 item terbaik untuk masing-masing pilar utama
+  for (const cat of targetCategories) {
+    const match = items.find(it => it.category?.toLowerCase() === cat.toLowerCase() && !pickedIds.has(it.id));
+    if (match) {
+      compact.push(match);
+      pickedIds.add(match.id);
+    }
+  }
+
+  // 2. Jika masih kurang dari 6, lengkapi dari sisa item yang belum terpilih
+  if (compact.length < 6) {
+    for (const it of items) {
+      if (!pickedIds.has(it.id)) {
+        compact.push(it);
+        pickedIds.add(it.id);
+        if (compact.length === 6) break;
+      }
+    }
+  }
+
+  return compact;
+}
+
