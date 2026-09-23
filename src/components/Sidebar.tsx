@@ -93,18 +93,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
           mobileOpen ? "translate-x-0 w-72" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        {/* Mobile Close Button when opened */}
-        {mobileOpen && (
-          <div className="md:hidden flex justify-end p-3 border-b border-subtle shrink-0">
+        {/* Brand Header: BA Integrasi RFS */}
+        <div className="p-3.5 border-b border-subtle flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center font-extrabold text-xs shadow-md shrink-0 tracking-wider">
+              RFS
+            </div>
+            {(!isCollapsed || mobileOpen) && (
+              <div className="min-w-0">
+                <h1 className="text-xs font-extrabold text-main tracking-tight truncate">
+                  BA Integrasi RFS
+                </h1>
+                <p className="text-[9.5px] text-muted truncate">
+                  PT. Fajar Mitra Krida Abadi
+                </p>
+              </div>
+            )}
+          </div>
+          {mobileOpen && (
             <button
               onClick={onCloseMobile}
-              className="p-1.5 rounded-lg text-muted hover:text-main hover:surface-elevated transition-colors"
+              className="p-1.5 rounded-lg text-muted hover:text-main hover:surface-elevated transition-colors md:hidden shrink-0"
               aria-label="Tutup Menu"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Navigation Menu List */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 no-scrollbar">

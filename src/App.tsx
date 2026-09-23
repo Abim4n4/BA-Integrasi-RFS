@@ -226,29 +226,67 @@ export default function App() {
     role: string;
     category: WorkNoteEntry['category'];
   }) => {
+    let updatedRecord: BeritaAcaraRFS | null = null;
+
+    // 1. Try backend API first
     try {
       const res = await fetch("/api/rfs/add-note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: recordId, ...noteData })
       });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message || "Gagal menyimpan catatan.");
+      const contentType = res.headers.get("content-type") || "";
+      if (res.ok && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          updatedRecord = data.data;
+        }
       }
-      const updatedRecord: BeritaAcaraRFS = data.data;
-      setRecords(prev => prev.map(r => r.id === recordId ? updatedRecord : r));
-      if (selectedDoc && selectedDoc.id === recordId) {
-        setSelectedDoc(updatedRecord);
-      }
-      try {
-        await saveRecordToFirestore(updatedRecord);
-      } catch (fsErr) {
-        console.warn("Firestore sync notification on add note:", fsErr);
-      }
-    } catch (err: any) {
-      throw err;
+    } catch (_e) {
+      // Backend not running (e.g. Vercel)
     }
+
+    // 2. Client-side update fallback
+    if (!updatedRecord) {
+      const target = records.find(r => r.id === recordId);
+      if (!target) throw new Error("Dokumen tidak ditemukan.");
+      const newEntry: WorkNoteEntry = {
+        id: `note-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        author: noteData.author,
+        role: noteData.role,
+        category: noteData.category,
+        content: noteData.note
+      };
+      updatedRecord = {
+        ...target,
+        workNotesHistory: [...(target.workNotesHistory || []), newEntry],
+        generalNotes: noteData.note
+      };
+    }
+
+    setRecords(prev => prev.map(r => r.id === recordId ? updatedRecord! : r));
+    if (selectedDoc && selectedDoc.id === recordId) {
+      setSelectedDoc(updatedRecord);
+    }
+
+    // Sync to Firestore & localStorage
+    try {
+      await saveRecordToFirestore(updatedRecord);
+    } catch (fsErr) {
+      console.warn("Firestore sync notification on add note:", fsErr);
+    }
+    try {
+      const existing = localStorage.getItem("rfs_local_records");
+      const list: BeritaAcaraRFS[] = existing ? JSON.parse(existing) : [];
+      const idx = list.findIndex(r => r.id === recordId);
+      if (idx >= 0) {
+        list[idx] = updatedRecord;
+      } else {
+        list.unshift(updatedRecord);
+      }
+      localStorage.setItem("rfs_local_records", JSON.stringify(list));
+    } catch (_lsErr) {}
   };
 
   return (

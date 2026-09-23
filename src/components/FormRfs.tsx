@@ -36,6 +36,8 @@ import { BeritaAcaraRFS, ServiceType, BandwidthUnit, RfsStatus, AiAnalysisResult
 import { DigitalSignaturePad } from "./DigitalSignaturePad.tsx";
 import { BarcodeScannerModal } from "./BarcodeScannerModal.tsx";
 import { DEFAULT_POC_ITEMS, DEFAULT_CLOSING_STATEMENT, COMPACT_POC_ITEMS, EXTENDED_POC_ITEMS } from "../data/pocTemplates.ts";
+import { analyzeBandwidth } from "../services/aiService.ts";
+import { submitBaRecord } from "../services/rfsSubmissionService.ts";
 
 interface FormRfsProps {
   currentUser: User | null;
@@ -401,19 +403,14 @@ export const FormRfs: React.FC<FormRfsProps> = ({
     setIsAnalyzingAi(true);
     setSubmitError("");
     try {
-      const res = await fetch("/api/rfs/analyze-ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (data.success && data.analysis) {
-        setPreviewAi(data.analysis);
+      const analysis = await analyzeBandwidth(formData);
+      if (analysis) {
+        setPreviewAi(analysis);
       } else {
-        setSubmitError(data.message || "Gagal menjalankan analisis AI.");
+        setSubmitError("Gagal menjalankan analisis performa bandwidth.");
       }
     } catch (err: any) {
-      setSubmitError("Kesalahan jaringan saat memanggil Gemini API: " + err.message);
+      setSubmitError("Gagal memproses analisis AI: " + (err.message || "Terjadi kesalahan"));
     } finally {
       setIsAnalyzingAi(false);
     }
@@ -462,20 +459,14 @@ export const FormRfs: React.FC<FormRfsProps> = ({
         createdBy: currentUser?.email || "System"
       };
 
-      const res = await fetch("/api/rfs/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const json = await res.json();
-      if (json.success && json.data) {
-        onSuccessSubmit(json.data);
+      const result = await submitBaRecord(payload, currentUser);
+      if (result.success && result.data) {
+        onSuccessSubmit(result.data);
       } else {
-        setSubmitError(json.message || "Gagal menyimpan Berita Acara.");
+        setSubmitError(result.message || "Gagal menyimpan Berita Acara.");
       }
     } catch (err: any) {
-      setSubmitError("Terjadi kegagalan saat mengirim data: " + err.message);
+      setSubmitError("Terjadi kegagalan saat mengirim data: " + (err.message || "Kesalahan tidak dikenal"));
     } finally {
       setIsSubmitting(false);
     }

@@ -83,9 +83,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
           <div className="w-12 h-12 rounded-2xl accent-bg text-white mx-auto flex items-center justify-center shadow-lg mb-3">
             <Lock className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-extrabold text-main">Masuk Portal Berita Acara RFS</h2>
+          <h2 className="text-lg font-extrabold text-main">Masuk BA Integrasi RFS</h2>
           <p className="text-xs text-muted mt-1">
-            Terintegrasi Firebase Auth &amp; Google Workspace (Drive, Sheets, Gmail)
+            PT. Fajar Mitra Krida Abadi • Terintegrasi Cloud &amp; Google Workspace
           </p>
         </div>
 
