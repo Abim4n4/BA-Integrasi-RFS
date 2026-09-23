@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { User } from "../types.ts";
+import { getLocalUsers, saveLocalUser } from "../services/authService.ts";
 
 interface AdminPanelProps {
   currentUser: User | null;
@@ -44,17 +45,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
+    let loaded = false;
     try {
       const res = await fetch("/api/admin/users");
-      const data = await res.json();
-      if (data.success && data.users) {
-        setUsers(data.users);
+      const contentType = res.headers.get("content-type") || "";
+      if (res.ok && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.users) && data.users.length > 0) {
+          setUsers(data.users);
+          loaded = true;
+        }
       }
-    } catch (e) {
-      console.error("Gagal mengambil daftar pengguna:", e);
-    } finally {
-      setLoadingUsers(false);
+    } catch (_e) {
+      // API not available, will use local users
     }
+
+    if (!loaded) {
+      const locals = getLocalUsers();
+      setUsers(locals.map(u => ({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        position: u.position,
+        department: u.department
+      })));
+    }
+    setLoadingUsers(false);
   };
 
   useEffect(() => {
@@ -64,31 +81,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatusMsg(null);
+
+    const createdUser = {
+      id: `USR-${Date.now().toString().slice(-4)}`,
+      email: newUser.email,
+      password: newUser.password,
+      name: newUser.name,
+      role: newUser.role,
+      position: newUser.position,
+      department: newUser.department
+    };
+
+    // Save locally first for instant availability (works on Vercel)
+    saveLocalUser(createdUser);
+
+    // Also attempt backend sync if API exists
     try {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser)
       });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg({ text: "Pengguna berhasil ditambahkan ke Sheet Users!" });
-        setShowAddModal(false);
-        setNewUser({
-          name: "",
-          email: "",
-          password: "",
-          role: "user",
-          position: "Field Engineer",
-          department: "Network Operations"
-        });
-        fetchUsers();
-      } else {
-        setStatusMsg({ text: data.message || "Gagal menambahkan user.", isError: true });
+      const contentType = res.headers.get("content-type") || "";
+      if (res.ok && contentType.includes("application/json")) {
+        await res.json();
       }
-    } catch (err: any) {
-      setStatusMsg({ text: err.message, isError: true });
+    } catch (_err) {
+      // Ignored for static host
     }
+
+    setStatusMsg({ text: "Pengguna baru berhasil ditambahkan dan dapat langsung digunakan untuk login!" });
+    setShowAddModal(false);
+    setNewUser({
+      name: "",
+      email: "",
+      password: "",
+      role: "user",
+      position: "Field Engineer",
+      department: "Network Operations"
+    });
+    fetchUsers();
   };
 
   return (

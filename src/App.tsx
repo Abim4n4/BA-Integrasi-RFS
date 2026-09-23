@@ -32,6 +32,7 @@ import {
   saveRecordToFirestore,
   deleteRecordFromFirestore
 } from "./services/firestoreService.ts";
+import { verifySession } from "./services/authService.ts";
 
 export default function App() {
   // Theme state
@@ -102,31 +103,32 @@ export default function App() {
   // Fetch BA RFS Records (with Firestore cloud fallback)
   const fetchRecords = useCallback(async () => {
     setIsLoadingRecords(true);
+    let loadedFromApi = false;
     try {
       const res = await fetch("/api/rfs/list");
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        setRecords(data.data);
-      } else {
-        // Fallback or sync from Firestore
+      const contentType = res.headers.get("content-type") || "";
+      if (res.ok && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setRecords(data.data);
+          loadedFromApi = true;
+        }
+      }
+    } catch (_e) {
+      // Backend unavailable (e.g. static hosting on Vercel)
+    }
+
+    if (!loadedFromApi) {
+      try {
         const fsRecords = await fetchRecordsFromFirestore();
         if (fsRecords && fsRecords.length > 0) {
           setRecords(fsRecords);
-        } else if (data.success && Array.isArray(data.data)) {
-          setRecords(data.data);
         }
-      }
-    } catch (e) {
-      console.warn("Server list API error, trying Firestore:", e);
-      try {
-        const fsRecords = await fetchRecordsFromFirestore();
-        if (fsRecords) setRecords(fsRecords);
       } catch (fsErr) {
         console.error("Gagal mengambil data dari Firestore:", fsErr);
       }
-    } finally {
-      setIsLoadingRecords(false);
     }
+    setIsLoadingRecords(false);
   }, []);
 
   // Validate Firestore Connection on App Init
@@ -148,19 +150,15 @@ export default function App() {
       }
 
       try {
-        const res = await fetch("/api/auth/session", {
-          headers: { Authorization: `Bearer ${savedToken}` }
-        });
-        const data = await res.json();
-        if (data.success && data.user) {
-          setCurrentUser(data.user);
+        const user = await verifySession(savedToken);
+        if (user) {
+          setCurrentUser(user);
         } else {
           localStorage.removeItem("rfs_session_token");
           localStorage.removeItem("rfs_user_data");
         }
       } catch (e) {
         console.warn("Session check offline:", e);
-        // Fallback to local stored profile if network offline
         const localUser = localStorage.getItem("rfs_user_data");
         if (localUser) {
           try {

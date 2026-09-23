@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Lock, Mail, AlertCircle, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
 import { User } from "../types.ts";
 import { googleSignIn } from "../lib/firebase.ts";
+import { authenticate } from "../services/authService.ts";
 
 interface LoginModalProps {
   onLoginSuccess: (user: User, token: string) => void;
@@ -51,24 +52,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
     const targetPassword = loginPassword || password;
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: targetEmail, password: targetPassword })
-      });
-
-      const data = await res.json();
-      if (data.success && data.user && data.token) {
+      const result = await authenticate(targetEmail, targetPassword);
+      if (result.success && result.user && result.token) {
         if (rememberSession) {
-          localStorage.setItem("rfs_session_token", data.token);
-          localStorage.setItem("rfs_user_data", JSON.stringify(data.user));
+          localStorage.setItem("rfs_session_token", result.token);
+          localStorage.setItem("rfs_user_data", JSON.stringify(result.user));
         }
-        onLoginSuccess(data.user, data.token);
+        onLoginSuccess(result.user, result.token);
       } else {
-        setErrorMsg(data.message || "Email atau kata sandi tidak sesuai.");
+        setErrorMsg(result.message || "Email atau kata sandi tidak sesuai.");
       }
     } catch (err: any) {
-      setErrorMsg("Gagal menghubungi server autentikasi: " + err.message);
+      setErrorMsg("Gagal melakukan login: " + (err.message || "Terjadi kesalahan"));
     } finally {
       setLoading(false);
     }
