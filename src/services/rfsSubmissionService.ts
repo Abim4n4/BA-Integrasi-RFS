@@ -6,13 +6,19 @@ export async function submitBaRecord(
   payload: any,
   currentUser: User | null
 ): Promise<{ success: boolean; data?: BeritaAcaraRFS; message?: string }> {
-  // 1. Try Express backend API first
+  // 1. Try Express backend API first with 1.5s timeout
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+
     const res = await fetch("/api/rfs/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const contentType = res.headers.get("content-type") || "";
     if (res.ok && contentType.includes("application/json")) {
@@ -22,10 +28,10 @@ export async function submitBaRecord(
       }
     }
   } catch (_netErr) {
-    // Backend offline / Vercel static deployment
+    // Backend offline / Vercel static deployment / timed out
   }
 
-  // 2. Client-side creation & Firestore Cloud Persistence (Vercel compatible)
+  // 2. Client-side creation & Instant Persistence (Vercel & offline compatible)
   try {
     const now = new Date();
     const year = now.getFullYear();
@@ -36,8 +42,8 @@ export async function submitBaRecord(
     const docId = `RFS-${year}${month}${day}-${randomSuffix}`;
     const noBa = payload.noBa || `BA-RFS/TELCO/${year}/${month}/${randomSuffix}`;
 
-    // Perform AI telecom analysis
-    const aiAnalysis = await analyzeBandwidth({
+    // Use existing AI analysis if already previewed, or run quick client-side analysis
+    const aiAnalysis = payload.aiAnalysis || await analyzeBandwidth({
       customerName: payload.isp || payload.customerName,
       locationName: payload.locationName || payload.siteName,
       siteId: payload.siteId || `SITE-${randomSuffix}`,
@@ -80,20 +86,18 @@ export async function submitBaRecord(
       createdBy: currentUser?.email || "System"
     };
 
-    // Save to Firestore Cloud database
-    try {
-      await saveRecordToFirestore(newRecord);
-    } catch (fsErr) {
-      console.warn("Firestore save fallback to local storage:", fsErr);
-    }
-
-    // Save to local storage for immediate offline display
+    // Save to local storage immediately for zero-delay UX
     try {
       const existingStr = localStorage.getItem("rfs_local_records");
       const existing: BeritaAcaraRFS[] = existingStr ? JSON.parse(existingStr) : [];
       existing.unshift(newRecord);
       localStorage.setItem("rfs_local_records", JSON.stringify(existing));
     } catch (_lsErr) {}
+
+    // Async save to Firestore in background (non-blocking)
+    saveRecordToFirestore(newRecord).catch((fsErr) => {
+      console.warn("Background Firestore sync notice:", fsErr);
+    });
 
     return { success: true, data: newRecord };
   } catch (err: any) {

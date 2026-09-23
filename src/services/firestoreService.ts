@@ -56,10 +56,15 @@ export async function saveRecordToFirestore(record: BeritaAcaraRFS): Promise<voi
 
     cleanData.updatedAtCloud = serverTimestamp();
 
-    await setDoc(docRef, cleanData, { merge: true });
+    // Guard with a 2.5-second timeout so offline/slow Firestore never hangs the app
+    const savePromise = setDoc(docRef, cleanData, { merge: true });
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Firestore operation timed out")), 2500)
+    );
+
+    await Promise.race([savePromise, timeoutPromise]);
   } catch (error) {
-    console.error("Firestore saveRecord error:", error);
-    throw error;
+    console.warn("Firestore saveRecord warning (continuing locally):", error);
   }
 }
 

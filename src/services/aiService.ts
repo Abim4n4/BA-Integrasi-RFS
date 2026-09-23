@@ -96,17 +96,23 @@ export function analyzeBandwidthLocally(data: BandwidthDataInput): AiAnalysisRes
 
 /**
  * Analyzes bandwidth performance with resilient multi-tier fallback:
- * 1. Express backend Gemini API (/api/rfs/analyze-ai)
+ * 1. Express backend Gemini API (/api/rfs/analyze-ai) with 1.5s fast timeout
  * 2. Instant client-side telecommunication evaluation engine (for Vercel & offline)
  */
 export async function analyzeBandwidth(data: BandwidthDataInput): Promise<AiAnalysisResult> {
-  // 1. Try backend API first (if hosted on fullstack Node.js server)
+  // 1. Try backend API first with 1.5 second timeout
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+
     const res = await fetch("/api/rfs/analyze-ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const contentType = res.headers.get("content-type") || "";
     if (res.ok && contentType.includes("application/json")) {
@@ -116,9 +122,9 @@ export async function analyzeBandwidth(data: BandwidthDataInput): Promise<AiAnal
       }
     }
   } catch (_netErr) {
-    // Backend offline / Vercel static rewrite, fallback safely below
+    // Backend offline / Vercel static rewrite / timed out -> fallback instantly
   }
 
-  // 2. Client-side resilient engine
+  // 2. Client-side resilient engine (instant, zero delay)
   return analyzeBandwidthLocally(data);
 }

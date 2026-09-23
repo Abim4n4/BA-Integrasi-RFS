@@ -456,6 +456,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
         signatureNe: sigNe,
         signatureTechnician: sigIsp,
         signatureCustomer: sigWaspang,
+        aiAnalysis: previewAi || undefined,
         createdBy: currentUser?.email || "System"
       };
 
