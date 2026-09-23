@@ -65,7 +65,7 @@ export async function generateAndDownloadPdf(
       const canvas = await html2canvas(element, {
         scale: 2, // High resolution (retina 300dpi equivalent)
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
         imageTimeout: 15000,
@@ -113,6 +113,22 @@ export async function generateAndDownloadPdf(
   }
 
   options?.onProgress?.("Menyimpan file PDF...");
-  pdf.save(filename);
+  try {
+    const pdfBlob = pdf.output("blob");
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      URL.revokeObjectURL(blobUrl);
+    }, 1500);
+  } catch (_blobErr) {
+    pdf.save(filename);
+  }
   return true;
 }

@@ -579,7 +579,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
               className="print-section mb-3 print:mb-1.5"
               style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
             >
-              <h4 className="font-bold text-[11px] print:text-[9.5px] uppercase bg-slate-100 p-1.5 print:py-0.5 print:px-1.5 border-l-4 border-slate-900 mb-1.5 print:mb-1">
+              <h4 className="font-bold text-[11px] print:text-[9.5px] uppercase bg-slate-100 p-1.5 print:py-0.5 print:px-1.5 border border-slate-200 mb-1.5 print:mb-1">
                 I. IDENTITAS PENYEDIA LAYANAN (ISP) &amp; LOKASI PEMASANGAN
               </h4>
               <table className="w-full text-[11px] print:text-[8.5px] border border-slate-300">
@@ -615,7 +615,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
               className="print-section mb-3 print:mb-1.5"
               style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
             >
-              <div className="flex justify-between items-center bg-slate-100 p-1.5 print:py-0.5 print:px-1.5 border-l-4 border-slate-900 mb-1.5 print:mb-1">
+              <div className="flex justify-between items-center bg-slate-100 p-1.5 print:py-0.5 print:px-1.5 border border-slate-200 mb-1.5 print:mb-1">
                 <h4 className="font-bold text-[11px] print:text-[9.5px] uppercase text-slate-900">
                   II. SPESIFIKASI LAYANAN &amp; HASIL PENGUJIAN JARINGAN (TEST RESULT)
                 </h4>
@@ -928,7 +928,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
               className="print-section mt-3 print:mt-1 mb-2.5 print:mb-1"
               style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
             >
-              <h4 className="font-bold text-[11px] print:text-[9.5px] uppercase bg-slate-100 p-1.5 print:py-0.5 print:px-1.5 border-l-4 border-slate-900 mb-1.5 print:mb-0.5">
+              <h4 className="font-bold text-[11px] print:text-[9.5px] uppercase bg-slate-100 p-1.5 print:py-0.5 print:px-1.5 border border-slate-200 mb-1.5 print:mb-0.5">
                 III. PENGESAHAN DOKUMEN &amp; TANDA TANGAN DIGITAL PIHAK MENGETAHUI
               </h4>
 
@@ -1031,7 +1031,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
                 className="print-section mt-2.5 print:mt-1 mb-2 print:mb-0.5"
                 style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
               >
-                <h4 className="font-bold text-[11px] print:text-[9px] uppercase bg-slate-100 p-1.5 print:py-0.5 print:px-1.5 border-l-4 border-slate-900 mb-1.5 print:mb-0.5">
+                <h4 className="font-bold text-[11px] print:text-[9px] uppercase bg-slate-100 p-1.5 print:py-0.5 print:px-1.5 border border-slate-200 mb-1.5 print:mb-0.5">
                   IV. DOKUMENTASI EVIDENT PENGUJIAN LAYANAN &amp; FOTO FISIK INSTALASI
                 </h4>
 

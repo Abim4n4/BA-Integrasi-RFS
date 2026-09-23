@@ -12,6 +12,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+      // Gracefully prevent benign Vite WebSocket/HMR connection notices from showing error overlays
+      window.addEventListener('unhandledrejection', function (event) {
+        if (event && event.reason) {
+          var msg = (event.reason.message || String(event.reason) || '').toLowerCase();
+          if (msg.includes('websocket') || msg.includes('closed without opened')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return false;
+          }
+        }
+      });
+      window.addEventListener('error', function (event) {
+        var msg = ((event.message || '') + ' ' + (event.error?.message || '')).toLowerCase();
+        if (msg.includes('websocket') || msg.includes('closed without opened')) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return false;
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
