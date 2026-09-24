@@ -5,6 +5,7 @@ import { BeritaAcaraRFS } from "../types.ts";
 export interface ExportPdfOptions {
   targetPages?: "all" | "page1" | "page2";
   onProgress?: (msg: string) => void;
+  saveMode?: "save-as" | "download";
 }
 
 /**
@@ -113,21 +114,54 @@ export async function generateAndDownloadPdf(
   }
 
   options?.onProgress?.("Menyimpan file PDF...");
+
+  // 1. Native Windows "Save As" (Simpan Sebagai) Dialog via File System Access API
+  if (options?.saveMode === "save-as" && typeof window !== "undefined" && "showSaveFilePicker" in window) {
+    try {
+      const fileHandle = await (window as any).showSaveFilePicker({
+        suggestedName: filename,
+        types: [
+          {
+            description: "Dokumen PDF Berita Acara (*.pdf)",
+            accept: {
+              "application/pdf": [".pdf"]
+            }
+          }
+        ]
+      });
+      const writable = await fileHandle.createWritable();
+      const arrayBuffer = pdf.output("arraybuffer");
+      await writable.write(arrayBuffer);
+      await writable.close();
+      return true;
+    } catch (pickerErr: any) {
+      if (pickerErr.name === "AbortError") {
+        // User voluntarily closed the Save As dialog
+        return false;
+      }
+      console.warn("SaveFilePicker tidak tersedia, beralih ke mode unduh standar:", pickerErr);
+    }
+  }
+
+  // 2. Standard direct download with explicit application/pdf MIME type and permanent retention
   try {
-    const pdfBlob = pdf.output("blob");
+    const rawBuffer = pdf.output("arraybuffer");
+    const pdfBlob = new Blob([rawBuffer], { type: "application/pdf" });
     const blobUrl = URL.createObjectURL(pdfBlob);
     const link = document.createElement("a");
     link.href = blobUrl;
-    link.download = filename;
+    link.setAttribute("download", filename);
+    link.style.display = "none";
     document.body.appendChild(link);
     link.click();
     setTimeout(() => {
       if (document.body.contains(link)) {
         document.body.removeChild(link);
       }
-      URL.revokeObjectURL(blobUrl);
-    }, 1500);
-  } catch (_blobErr) {
+      // Retain blobUrl for at least 2 minutes so Edge / Chrome PDF viewer can stream and save
+    }, 120000);
+  } catch (_saveErr) {
+    // 3. Fallback: jsPDF standard native save
     pdf.save(filename);
   }
   return true;

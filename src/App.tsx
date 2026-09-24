@@ -75,6 +75,7 @@ export default function App() {
   // BA-RFS Records state
   const [records, setRecords] = useState<BeritaAcaraRFS[]>([]);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
+  const [cloningRecord, setCloningRecord] = useState<BeritaAcaraRFS | null>(null);
 
   // Print Document Modal state
   const [selectedDoc, setSelectedDoc] = useState<BeritaAcaraRFS | null>(null);
@@ -85,6 +86,12 @@ export default function App() {
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleCloneRecord = (record: BeritaAcaraRFS) => {
+    setCloningRecord(record);
+    setActiveTab("form");
+    showToast(`Data dokumen ${record.locationName || record.noBa} siap di-clone sebagai draft baru!`, "success");
   };
 
   // Sync theme changes to document attributes and localStorage
@@ -100,34 +107,57 @@ export default function App() {
     document.body.setAttribute("data-theme", theme);
   }, [theme]);
 
-  // Fetch BA RFS Records (with Firestore cloud fallback)
+  // Fetch BA RFS Records (Clean: Keep Paradise Serpong II & User records, remove old mocks)
   const fetchRecords = useCallback(async () => {
     setIsLoadingRecords(true);
-    let loadedFromApi = false;
+    let loadedRecords: BeritaAcaraRFS[] = [];
+    const oldMockIds = new Set(["RFS-20260917-001", "RFS-20260916-002", "RFS-20260915-003"]);
+
     try {
       const res = await fetch("/api/rfs/list");
       const contentType = res.headers.get("content-type") || "";
       if (res.ok && contentType.includes("application/json")) {
         const data = await res.json();
         if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setRecords(data.data);
-          loadedFromApi = true;
+          loadedRecords = data.data;
         }
       }
     } catch (_e) {
-      // Backend unavailable (e.g. static hosting on Vercel)
+      // Backend unavailable
     }
 
-    if (!loadedFromApi) {
+    if (loadedRecords.length === 0) {
       try {
         const fsRecords = await fetchRecordsFromFirestore();
         if (fsRecords && fsRecords.length > 0) {
-          setRecords(fsRecords);
+          loadedRecords = fsRecords;
         }
       } catch (fsErr) {
         console.error("Gagal mengambil data dari Firestore:", fsErr);
       }
     }
+
+    // Merge from local storage if any
+    try {
+      const rawLocal = localStorage.getItem("rfs_local_records");
+      if (rawLocal) {
+        const parsed = JSON.parse(rawLocal);
+        if (Array.isArray(parsed)) {
+          const map = new Map<string, BeritaAcaraRFS>();
+          parsed.forEach((r: BeritaAcaraRFS) => {
+            if (r?.id && !oldMockIds.has(r.id)) map.set(r.id, r);
+          });
+          loadedRecords.forEach((r: BeritaAcaraRFS) => {
+            if (r?.id && !map.has(r.id) && !oldMockIds.has(r.id)) map.set(r.id, r);
+          });
+          loadedRecords = Array.from(map.values());
+        }
+      }
+    } catch (_err) {}
+
+    // Exclude old mock demo records to keep cleanly to today's template
+    const cleanRecords = loadedRecords.filter(r => !oldMockIds.has(r.id));
+    setRecords(cleanRecords);
     setIsLoadingRecords(false);
   }, []);
 
@@ -311,40 +341,56 @@ export default function App() {
         </div>
       )}
 
-      {/* Login Modal if not logged in */}
-      {!isCheckingSession && !currentUser && (
-        <LoginModal onLoginSuccess={handleLoginSuccess} />
+      {/* 1. Splash Loader while verifying session */}
+      {isCheckingSession && (
+        <div className="fixed inset-0 z-[100] surface-base flex flex-col items-center justify-center p-4">
+          <div className="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center p-2 border border-slate-700 shadow-xl mb-3 animate-pulse">
+            <FmkaLogo className="w-8 h-8" />
+          </div>
+          <p className="text-xs font-semibold text-main">Memuat portal BA Integrasi RFS...</p>
+        </div>
       )}
 
-      {/* Vertical Sidebar Navigation */}
-      <Sidebar
-        currentUser={currentUser}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        currentTheme={theme}
-        onThemeChange={handleThemeChange}
-        fontSize={fontSize}
-        onFontSizeChange={setFontSize}
-        onLogout={handleLogout}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={toggleSidebarCollapse}
-        mobileOpen={mobileSidebarOpen}
-        onCloseMobile={() => setMobileSidebarOpen(false)}
-      />
+      {/* 2. Pristine Full-Page Login if logged out (Zero sidebar leak!) */}
+      {!isCheckingSession && !currentUser ? (
+        <LoginModal
+          onLoginSuccess={handleLoginSuccess}
+          currentTheme={theme}
+          onThemeChange={handleThemeChange}
+          fontSize={fontSize}
+          onFontSizeChange={setFontSize}
+        />
+      ) : (
+        <>
+          {/* Vertical Sidebar Navigation - ONLY rendered when authenticated */}
+          <Sidebar
+            currentUser={currentUser}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            currentTheme={theme}
+            onThemeChange={handleThemeChange}
+            fontSize={fontSize}
+            onFontSizeChange={setFontSize}
+            onLogout={handleLogout}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={toggleSidebarCollapse}
+            mobileOpen={mobileSidebarOpen}
+            onCloseMobile={() => setMobileSidebarOpen(false)}
+          />
 
-      {/* Main Content Area (Safely offset by sidebar width) */}
-      <div
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-          isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
-        }`}
-      >
+          {/* Main Content Area (Safely offset by sidebar width) */}
+          <div
+            className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+              isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
+            }`}
+          >
         {/* Top Header Bar for Content Area */}
-        <header className="sticky top-0 z-30 surface-card border-b backdrop-blur-md px-4 sm:px-6 h-16 flex items-center justify-between transition-colors duration-200">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 surface-card border-b backdrop-blur-md px-4 sm:px-6 h-16 flex items-center justify-between gap-3 transition-colors duration-200">
+          <div className="flex items-center gap-3 min-w-0">
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="md:hidden p-2 rounded-xl surface-elevated text-main hover:opacity-80 transition-colors"
+              className="md:hidden p-2 rounded-xl surface-elevated text-main hover:opacity-80 transition-colors shrink-0"
               aria-label="Buka Menu Navigasi"
             >
               <Menu className="w-5 h-5" />
@@ -353,7 +399,7 @@ export default function App() {
             {/* Desktop Collapse / Expand Button */}
             <button
               onClick={toggleSidebarCollapse}
-              className="hidden md:flex p-2 rounded-xl surface-elevated text-main hover:opacity-80 items-center justify-center transition-colors"
+              className="hidden md:flex p-2 rounded-xl surface-elevated text-main hover:opacity-80 items-center justify-center transition-colors shrink-0"
               title={isSidebarCollapsed ? "Perluas Sidebar" : "Ciutkan Sidebar"}
             >
               {isSidebarCollapsed ? (
@@ -363,71 +409,52 @@ export default function App() {
               )}
             </button>
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                {activeTab === "form" && (
-                  <>
-                    <FileText className="w-4 h-4 accent-color shrink-0" />
-                    <div>
-                      <h2 className="text-sm sm:text-base font-bold text-main leading-tight">
-                        Form Input BA RFS
-                      </h2>
-                    </div>
-                  </>
-                )}
-                {activeTab === "table" && (
-                  <>
-                    <TableProperties className="w-4 h-4 accent-color shrink-0" />
-                    <div>
-                      <h2 className="text-sm sm:text-base font-bold text-main leading-tight">
-                        Tabel Rekapan DataBA
-                      </h2>
-                      <p className="text-[10px] text-muted hidden sm:block">
-                        Database riwayat Berita Acara RFS, evaluasi throughput & unduh arsip PDF
-                      </p>
-                    </div>
-                  </>
-                )}
-                {activeTab === "admin" && (
-                  <>
-                    <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <h2 className="text-sm sm:text-base font-bold text-main leading-tight">
-                          Panel Khusus Administrator
-                        </h2>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
-                          PRO
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-muted hidden sm:block">
-                        Manajemen kredensial pengguna, audit log keamanan, dan analitik performa
-                      </p>
-                    </div>
-                  </>
-                )}
-                {activeTab === "gas" && (
-                  <>
-                    <Code2 className="w-4 h-4 text-sky-400 shrink-0" />
-                    <div>
-                      <h2 className="text-sm sm:text-base font-bold text-main leading-tight">
-                        Eksportir Kode GAS (Code.gs & Index.html)
-                      </h2>
-                      <p className="text-[10px] text-muted hidden sm:block">
-                        Deployment instan ke Google Apps Script dan Google Sheets Spreadsheet
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
+            <div className="flex items-center gap-2 min-w-0">
+              {activeTab === "form" && (
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="w-4 h-4 accent-color shrink-0" />
+                  <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
+                    Form Input BA RFS
+                  </h2>
+                </div>
+              )}
+              {activeTab === "table" && (
+                <div className="flex items-center gap-2 min-w-0">
+                  <TableProperties className="w-4 h-4 accent-color shrink-0" />
+                  <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
+                    Tabel Rekapan DataBA
+                  </h2>
+                </div>
+              )}
+              {activeTab === "admin" && (
+                <div className="flex items-center gap-2 min-w-0">
+                  <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
+                      Panel Administrator
+                    </h2>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold shrink-0">
+                      PRO
+                    </span>
+                  </div>
+                </div>
+              )}
+              {activeTab === "gas" && (
+                <div className="flex items-center gap-2 min-w-0">
+                  <Code2 className="w-4 h-4 text-sky-400 shrink-0" />
+                  <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
+                    Eksportir Kode GAS
+                  </h2>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right Topbar Indicators */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Quick Font Size Switcher for Field Waspang */}
             <div 
-              className="flex items-center gap-0.5 surface-elevated border border-subtle rounded-full p-0.5 text-xs shadow-xs" 
+              className="flex items-center gap-0.5 surface-elevated border border-subtle rounded-full p-0.5 text-xs shadow-xs shrink-0" 
               title="Pengatur Ukuran Huruf (Ramah Pengawas Lapangan/Waspang Senior)"
             >
               <span className="text-[11px] font-bold text-muted px-1.5 hidden md:inline-flex items-center gap-1 select-none">
@@ -473,7 +500,7 @@ export default function App() {
             </div>
 
             {/* FMKA Corporate Logo Badge */}
-            <div className="hidden lg:flex items-center gap-2 pr-3 border-r border-subtle">
+            <div className="hidden xl:flex items-center gap-2 pr-3 border-r border-subtle shrink-0">
               <div className="w-7 h-7 rounded-full bg-slate-950 flex items-center justify-center p-0.5 border border-slate-700 shadow-sm">
                 <FmkaLogo className="w-6 h-6" />
               </div>
@@ -487,19 +514,29 @@ export default function App() {
               </div>
             </div>
 
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold surface-elevated border text-muted">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold surface-elevated border text-muted shrink-0">
               <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse"></span>
               <span className="capitalize">{theme.replace("-", " ")}</span>
             </span>
 
             {currentUser && (
-              <span className="text-[11px] px-2.5 py-1 rounded-full font-bold surface-elevated border text-main hidden md:inline-flex items-center gap-1">
+              <span className="text-[11px] px-2.5 py-1 rounded-full font-bold surface-elevated border text-main hidden md:inline-flex items-center gap-1 shrink-0">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    currentUser.role === "admin" ? "bg-amber-400" : "bg-emerald-400"
+                    currentUser.role === "admin"
+                      ? "bg-amber-400"
+                      : currentUser.role === "waspang"
+                        ? "bg-indigo-400"
+                        : "bg-emerald-400"
                   }`}
                 />
-                <span>{currentUser.role === "admin" ? "Super Admin" : "Field Engineer"}</span>
+                <span>
+                  {currentUser.role === "admin"
+                    ? "Super Admin"
+                    : currentUser.role === "waspang"
+                      ? "Waspang Lapangan"
+                      : "Field Engineer"}
+                </span>
               </span>
             )}
           </div>
@@ -512,6 +549,8 @@ export default function App() {
               currentUser={currentUser}
               onSuccessSubmit={handleSuccessSubmit}
               onViewPrintDoc={setSelectedDoc}
+              cloneRecord={cloningRecord}
+              onClearClone={() => setCloningRecord(null)}
             />
           )}
 
@@ -522,6 +561,7 @@ export default function App() {
               isLoading={isLoadingRecords}
               onRefresh={fetchRecords}
               onViewPrint={setSelectedDoc}
+              onCloneRecord={handleCloneRecord}
               onDeleteRecord={handleDeleteRecord}
               onShowToast={showToast}
               onAddWorkNote={handleAddWorkNote}
@@ -535,6 +575,8 @@ export default function App() {
           {activeTab === "gas" && <GasExportModal />}
         </main>
       </div>
+    </>
+  )}
 
       {/* Printable Document Modal */}
       {selectedDoc && (
@@ -542,6 +584,7 @@ export default function App() {
           record={selectedDoc}
           onClose={() => setSelectedDoc(null)}
           onToast={showToast}
+          onCloneRecord={handleCloneRecord}
         />
       )}
     </div>

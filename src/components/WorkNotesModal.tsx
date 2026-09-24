@@ -40,7 +40,9 @@ export const WorkNotesModal: React.FC<WorkNotesModalProps> = ({
   onShowToast
 }) => {
   const [newNote, setNewNote] = useState("");
-  const [category, setCategory] = useState<WorkNoteEntry['category']>("Tindak Lanjut");
+  const [category, setCategory] = useState<WorkNoteEntry['category']>(
+    currentUser?.role === "waspang" ? "Waspang" : "Tindak Lanjut"
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -77,7 +79,13 @@ export const WorkNotesModal: React.FC<WorkNotesModalProps> = ({
     try {
       setIsSubmitting(true);
       const authorName = currentUser?.name || record.technicianName || "Petugas Lapangan";
-      const authorRole = currentUser?.position || (currentUser?.role === "admin" ? "Admin" : "Teknisi");
+      const authorRole = currentUser?.position || (
+        currentUser?.role === "admin"
+          ? "Admin"
+          : currentUser?.role === "waspang"
+            ? "Waspang"
+            : "Teknisi"
+      );
 
       await onAddNote(record.id, {
         note: newNote.trim(),

@@ -15,7 +15,8 @@ import {
   MessageSquare,
   Plus,
   FileDown,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from "lucide-react";
 import { BeritaAcaraRFS, User, WorkNoteEntry } from "../types.ts";
 import { GoogleWorkspacePanel } from "./GoogleWorkspacePanel.tsx";
@@ -29,6 +30,7 @@ interface TableRekapanProps {
   isLoading: boolean;
   onRefresh: () => void;
   onViewPrint: (record: BeritaAcaraRFS) => void;
+  onCloneRecord?: (record: BeritaAcaraRFS) => void;
   onDeleteRecord: (id: string) => void;
   onShowToast?: (message: string, type: "success" | "error") => void;
   onAddWorkNote?: (recordId: string, noteData: {
@@ -45,6 +47,7 @@ export const TableRekapan: React.FC<TableRekapanProps> = ({
   isLoading,
   onRefresh,
   onViewPrint,
+  onCloneRecord,
   onDeleteRecord,
   onShowToast = () => {},
   onAddWorkNote
@@ -584,6 +587,16 @@ export const TableRekapan: React.FC<TableRekapanProps> = ({
                           >
                             <Printer className="w-3.5 h-3.5" />
                           </button>
+
+                          {onCloneRecord && (
+                            <button
+                              onClick={() => onCloneRecord(item)}
+                              className="p-1.5 rounded-lg border surface-card hover:bg-emerald-600 hover:text-white transition-all text-emerald-600 dark:text-emerald-400"
+                              title="Clone / Duplikat BA ini untuk Buat Dokumen Baru"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
                           {currentUser?.role === "admin" && (
                             <button

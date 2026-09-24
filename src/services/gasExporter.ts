@@ -55,6 +55,7 @@ function setupInitialSheets() {
     sheetUsers.appendRow(["USR-001", "admin@rfs.telco.id", "admin123", "Budi Santoso, S.T.", "admin", "Manajer Operasional & NOC", "Network Operations", "ACTIVE", new Date()]);
     sheetUsers.appendRow(["USR-002", "teknisi@rfs.telco.id", "teknisi123", "Rian Pratama", "user", "Senior Field Engineer", "Field Deployment", "ACTIVE", new Date()]);
     sheetUsers.appendRow(["USR-003", "sales@rfs.telco.id", "sales123", "Dewi Lestari", "user", "Account Manager", "Enterprise Sales", "ACTIVE", new Date()]);
+    sheetUsers.appendRow(["USR-004", "waspang@rfs.telco.id", "waspang123", "Hendra Wijaya, S.T.", "waspang", "Pengawas Lapangan (Waspang)", "Pengawasan & QA Proyek", "ACTIVE", new Date()]);
   }
   
   // 2. Setup Sheet DataBA
@@ -585,11 +586,11 @@ export const INDEX_HTML_STANDALONE = `<!DOCTYPE html>
       <div class="space-y-1">
         <p class="px-3 text-[10px] font-bold uppercase tracking-wider theme-text-muted">Admin & Integrasi</p>
         
-        <!-- 3. Panel Khusus Admin -->
+        <!-- 3. Panel Admin -->
         <button id="tab-btn-admin" onclick="switchTab('admin')" class="w-full relative flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left theme-elevated">
           <div class="flex items-center gap-3">
             <span class="text-base">🛡️</span>
-            <span>Panel Khusus Admin</span>
+            <span>Panel Admin</span>
           </div>
           <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">PRO</span>
         </button>
@@ -839,7 +840,7 @@ export const INDEX_HTML_STANDALONE = `<!DOCTYPE html>
         <div class="flex items-center gap-2">
           <span class="text-xl">🛡️</span>
           <div>
-            <h2 class="text-sm font-bold uppercase tracking-wider">Panel Khusus Administrator (PRO)</h2>
+            <h2 class="text-sm font-bold uppercase tracking-wider">Panel Administrator (PRO)</h2>
             <p class="text-xs theme-text-muted">Akses penuh audit log dan manajemen data portal RFS.</p>
           </div>
         </div>
@@ -932,7 +933,7 @@ export const INDEX_HTML_STANDALONE = `<!DOCTYPE html>
       const titles = {
         form: 'Form Input BA RFS',
         table: 'Tabel Rekapan DataBA',
-        admin: 'Panel Khusus Administrator',
+        admin: 'Panel Administrator',
         gas: 'Eksportir Kode GAS'
       };
       if (document.getElementById('pageHeading')) {

@@ -19,7 +19,7 @@ interface UserRecord {
   email: string;
   password: string;
   name: string;
-  role: "admin" | "user";
+  role: "admin" | "user" | "waspang";
   position: string;
   department: string;
 }
@@ -51,6 +51,15 @@ const INITIAL_USERS: UserRecord[] = [
     role: "user",
     position: "Account Executive Enterprise",
     department: "Corporate Enterprise Sales"
+  },
+  {
+    id: "USR-004",
+    email: "waspang@rfs.telco.id",
+    password: "waspang123",
+    name: "Hendra Wijaya, S.T.",
+    role: "waspang",
+    position: "Pengawas Lapangan (Waspang)",
+    department: "Pengawasan & QA Proyek"
   }
 ];
 
@@ -129,165 +138,59 @@ interface BaRecord {
   createdBy: string;
 }
 
-// Seed historical BA-RFS records
+// Seed historical BA-RFS records - Official template based on today's Paradise Serpong II
 let baRecordsStore: BaRecord[] = [
   {
-    id: "RFS-20260917-001",
-    noBa: "BA-RFS/TELCO/2026/09/0014",
-    tanggal: "2026-09-17",
-    waktu: "14:30",
+    id: "RFS-20260923-4725",
+    noBa: "BA-RFS/TELCO/2026/09/4725",
+    tanggal: "2026-09-23",
+    waktu: "14:00",
     isp: "PT Solusi Jaringan Nusantara (ISP)",
     customerName: "PT Solusi Jaringan Nusantara (ISP)",
-    locationName: "Cabang Menara Pacific Lt. 12",
-    siteName: "Cabang Menara Pacific Lt. 12",
-    siteAddress: "Kawasan SCBD Lot 11, Jl. Jend. Sudirman Kav. 52-53, Jakarta Selatan",
-    gpsCoordinates: "-6.225912, 106.809420",
-    siteId: "JKT-SCBD-088",
-    kotaWilayah: "Jakarta Selatan, DKI Jakarta",
-    serviceType: "Fiber Optic Dedicated",
-    subscribedBandwidth: 200,
-    bandwidthUnit: "Mbps",
-    slaCommitment: "99.90%",
-    downloadSpeed: 198.4,
-    uploadSpeed: 197.8,
-    pingLatency: 6.2,
-    jitter: 1.1,
-    packetLoss: 0.0,
-    technicianName: "Rian Pratama",
-    technicianPhone: "0812-3456-7890",
-    picCustomerName: "Hendrawan Putra",
-    picCustomerPhone: "0811-9876-5432",
-    salesName: "Dewi Lestari",
-    approvedByName: "Budi Santoso, S.T.",
-    ispSignerName: "PT Solusi Jaringan Nusantara (ISP)",
-    waspangSignerName: "Ir. Joko Sutrisno (WASPANG)",
-    neSignerName: "Bambang Kurniawan, S.T. (NE)",
-    status: "Ready For Service",
-    generalNotes: "Aktivasi OLT Port 4 ke ONT Huawei EG8145V5 berhasil stabil. Redaman optik -18.2 dBm.",
-    aiAnalysis: {
-      summary: "Koneksi prima melebihi 98% komitmen SLA dengan latency ultra rendah.",
-      rating: "Sangat Baik",
-      slaStatus: "Memenuhi SLA (Pass)",
-      downloadRatioPercent: 99.2,
-      uploadRatioPercent: 98.9,
-      latencyAssessment: "Latency 6.2 ms sangat ideal untuk transaksi core banking real-time.",
-      jitterAssessment: "Jitter 1.1 ms stabil tanpa fluktuasi buffer.",
-      packetLossAssessment: "0.0% packet loss terverifikasi selama 1000 ICMP echo test.",
-      technicalNotes: "Konektivitas link Metro Ethernet Dedicated 200 Mbps telah melalui stress test 60 menit. Throughput unduh mencapai 198.4 Mbps (99.2% CIR) dan unggah 197.8 Mbps (98.9% CIR). Tidak ditemukan frame drop atau CRC errors pada interface switch gateway. Direkomendasikan segera dialihkan ke traffic produksi nasabah.",
-      recommendations: [
-        "Jadwalkan monitoring berkala per 15 menit melalui NMS Zabbix.",
-        "Pastikan UPS pada rak server pelanggan memiliki backup time minimal 30 menit."
-      ],
-      analyzedAt: "2026-09-17 14:35 WIB",
-      modelUsed: "gemini-3.8-flash"
-    },
-    createdAt: "2026-09-17T14:35:00Z",
-    createdBy: "teknisi@rfs.telco.id"
-  },
-  {
-    id: "RFS-20260916-002",
-    noBa: "BA-RFS/TELCO/2026/09/0013",
-    tanggal: "2026-09-16",
-    waktu: "11:15",
-    isp: "PT Trans Data Indonesia (ISP)",
-    customerName: "PT Trans Data Indonesia (ISP)",
-    locationName: "RS Mitra Sehat - Gedung Rawat Inap Blok B",
-    siteName: "Gedung Rawat Inap Blok B",
-    siteAddress: "Jl. Raya Darmo No. 45-47, Surabaya, Jawa Timur",
-    gpsCoordinates: "-7.291244, 112.738192",
-    siteId: "SBY-DARMO-012",
-    kotaWilayah: "Surabaya, Jawa Timur",
+    locationName: "Paradise Serpong II",
+    siteName: "Paradise Serpong II",
+    siteAddress: "Perumahan Paradise Serpong City 2, Babakan, Setu, Tangerang Selatan, Banten",
+    gpsCoordinates: "-6.353412, 106.689215",
+    siteId: "TNG-PARADISE-02",
+    kotaWilayah: "Tangerang Selatan, Banten",
     serviceType: "Fiber Optic Dedicated",
     subscribedBandwidth: 100,
     bandwidthUnit: "Mbps",
     slaCommitment: "99.85%",
-    downloadSpeed: 96.5,
-    uploadSpeed: 95.0,
-    pingLatency: 14.8,
-    jitter: 2.4,
+    downloadSpeed: 98.4,
+    uploadSpeed: 97.2,
+    pingLatency: 4.8,
+    jitter: 0.9,
     packetLoss: 0.0,
     technicianName: "Rian Pratama",
     technicianPhone: "0812-3456-7890",
-    picCustomerName: "Dr. Farhan Syahreza",
-    picCustomerPhone: "0813-4455-6677",
+    picCustomerName: "Ahmad Zaki",
+    picCustomerPhone: "0813-8899-7711",
     salesName: "Dewi Lestari",
     approvedByName: "Budi Santoso, S.T.",
     ispSignerName: "PT Solusi Jaringan Nusantara (ISP)",
     waspangSignerName: "Ir. Joko Sutrisno (WASPANG)",
     neSignerName: "Bambang Kurniawan, S.T. (NE)",
     status: "Ready For Service",
-    generalNotes: "Integrasi sistem PACS & SIMRS rumah sakit berjalan lancar.",
+    generalNotes: "Aktivasi dan integrasi port OLT ke OTB di cluster Paradise Serpong II berhasil stabil. Redaman optik -17.8 dBm (Sangat Baik). Link siap operasional.",
     aiAnalysis: {
-      summary: "Hasil tes memenuhi komitmen SLA 100 Mbps dengan latency transmisi yang sangat baik.",
-      rating: "Optimal",
+      summary: "Koneksi link Paradise Serpong II prima melebihi 98% komitmen SLA dengan latency ultra rendah 4.8 ms.",
+      rating: "Sangat Baik",
       slaStatus: "Memenuhi SLA (Pass)",
-      downloadRatioPercent: 96.5,
-      uploadRatioPercent: 95.0,
-      latencyAssessment: "Latency 14.8 ms ke gateway nasional sangat baik.",
-      jitterAssessment: "Jitter 2.4 ms aman untuk streaming radiologi telemedis.",
-      packetLossAssessment: "0.0% packet loss terverifikasi.",
-      technicalNotes: "Throughput stabil di 96.5 Mbps dari 100 Mbps paket langganan. Pengujian transfer file image DICOM 4GB berhasil ditransmisikan tanpa paket drop.",
+      downloadRatioPercent: 98.4,
+      uploadRatioPercent: 97.2,
+      latencyAssessment: "Latency 4.8 ms sangat ideal untuk transmisi broadband berkecepatan tinggi.",
+      jitterAssessment: "Jitter 0.9 ms sangat stabil tanpa fluktuasi buffer.",
+      packetLossAssessment: "0.0% packet loss terverifikasi selama pengujian continuous ping.",
+      technicalNotes: "Konektivitas link FTTH Dedicated telah melalui stress test throughput. Throughput unduh mencapai 98.4 Mbps (98.4% CIR) dan unggah 97.2 Mbps (97.2% CIR). Tidak ditemukan frame drop atau CRC errors pada interface gateway.",
       recommendations: [
-        "Aktifkan QoS untuk memprioritaskan IP server SIMRS dan Radiologi.",
-        "Simpan kontak darurat NOC 24/7 di ruang server rumah sakit."
+        "Jadwalkan monitoring berkala per 15 menit melalui NMS.",
+        "Pastikan perangkat ONT/switch pelanggan terlindungi cadangan daya UPS."
       ],
-      analyzedAt: "2026-09-16 11:20 WIB",
+      analyzedAt: "2026-09-23 14:05 WIB",
       modelUsed: "gemini-3.8-flash"
     },
-    createdAt: "2026-09-16T11:20:00Z",
-    createdBy: "teknisi@rfs.telco.id"
-  },
-  {
-    id: "RFS-20260915-003",
-    noBa: "BA-RFS/TELCO/2026/09/0012",
-    tanggal: "2026-09-15",
-    waktu: "16:45",
-    isp: "PT Global Lintas Nusa (ISP)",
-    customerName: "PT Global Lintas Nusa (ISP)",
-    locationName: "Hub Distribusi Cibiru Logistik",
-    siteName: "Hub Distribusi Cibiru",
-    siteAddress: "Jl. Soekarno-Hatta KM 12 No. 88, Cibiru, Bandung",
-    gpsCoordinates: "-6.932410, 107.712390",
-    siteId: "BDO-CIBIRU-009",
-    kotaWilayah: "Bandung, Jawa Barat",
-    serviceType: "Wireless Microwave",
-    subscribedBandwidth: 50,
-    bandwidthUnit: "Mbps",
-    slaCommitment: "99.50%",
-    downloadSpeed: 42.1,
-    uploadSpeed: 40.5,
-    pingLatency: 28.5,
-    jitter: 4.8,
-    packetLoss: 1.2,
-    technicianName: "Rian Pratama",
-    technicianPhone: "0812-3456-7890",
-    picCustomerName: "Bambang Triatmojo",
-    picCustomerPhone: "0856-1234-5678",
-    salesName: "Dewi Lestari",
-    approvedByName: "Budi Santoso, S.T.",
-    ispSignerName: "PT Solusi Jaringan Nusantara (ISP)",
-    waspangSignerName: "Ir. Joko Sutrisno (WASPANG)",
-    neSignerName: "Bambang Kurniawan, S.T. (NE)",
-    status: "Conditional RFS",
-    generalNotes: "Sinyal radio microwave RSL -64 dBm, sedikit dipengaruhi curah hujan lebat saat pengetesan.",
-    aiAnalysis: {
-      summary: "Kinerja link nirkabel cukup baik namun terdeteksi packet loss 1.2% saat cuaca buruk.",
-      rating: "Perlu Tuning",
-      slaStatus: "Conditional (Review)",
-      downloadRatioPercent: 84.2,
-      uploadRatioPercent: 81.0,
-      latencyAssessment: "Latency 28.5 ms wajar untuk medium microwave 15 km.",
-      jitterAssessment: "Jitter 4.8 ms sedikit tinggi pada saat hujan deras.",
-      packetLossAssessment: "Terdapat 1.2% packet loss yang melebihi standar ideal 0.5%.",
-      technicalNotes: "Throughput download 42.1 Mbps (84.2% CIR). Kondisi RSL antenna wireless berada pada batas marginal saat hujan lebat. Direkomendasikan melakukan re-alignment pointing antenna radio microwave dalam masa conditional RFS 3 hari.",
-      recommendations: [
-        "Lakukan re-pointing azimuth antena radio microwave untuk menaikkan RSL ke -58 dBm.",
-        "Pantau link uptime selama 48 jam sebelum status disahkan menjadi Full RFS."
-      ],
-      analyzedAt: "2026-09-15 16:50 WIB",
-      modelUsed: "gemini-3.8-flash"
-    },
-    createdAt: "2026-09-15T16:50:00Z",
+    createdAt: "2026-09-23T14:00:00Z",
     createdBy: "teknisi@rfs.telco.id"
   }
 ];
@@ -769,6 +672,60 @@ app.post("/api/admin/users", (req, res) => {
 
   usersStore.push(newUser);
   return res.json({ success: true, message: "Pengguna berhasil ditambahkan.", user: newUser });
+});
+
+// Admin: Update User
+app.put("/api/admin/users/:id", (req, res) => {
+  const { id } = req.params;
+  const { email, password, name, role, position, department } = req.body;
+  const userIndex = usersStore.findIndex(u => u.id === id);
+  if (userIndex === -1) {
+    return res.status(404).json({ success: false, message: "Pengguna tidak ditemukan." });
+  }
+
+  if (email && email.toLowerCase() !== usersStore[userIndex].email.toLowerCase()) {
+    if (usersStore.some(u => u.id !== id && u.email.toLowerCase() === email.toLowerCase())) {
+      return res.status(400).json({ success: false, message: "Email sudah digunakan oleh pengguna lain." });
+    }
+    usersStore[userIndex].email = email;
+  }
+
+  if (name) usersStore[userIndex].name = name;
+  if (role) usersStore[userIndex].role = role;
+  if (position) usersStore[userIndex].position = position;
+  if (department) usersStore[userIndex].department = department;
+  if (password && password.trim().length > 0) {
+    usersStore[userIndex].password = password;
+  }
+
+  return res.json({
+    success: true,
+    message: "Data pengguna berhasil diperbarui.",
+    user: {
+      id: usersStore[userIndex].id,
+      email: usersStore[userIndex].email,
+      name: usersStore[userIndex].name,
+      role: usersStore[userIndex].role,
+      position: usersStore[userIndex].position,
+      department: usersStore[userIndex].department
+    }
+  });
+});
+
+// Admin: Delete User
+app.delete("/api/admin/users/:id", (req, res) => {
+  const { id } = req.params;
+  const userIndex = usersStore.findIndex(u => u.id === id);
+  if (userIndex === -1) {
+    return res.status(404).json({ success: false, message: "Pengguna tidak ditemukan." });
+  }
+
+  const deletedUser = usersStore[userIndex];
+  usersStore.splice(userIndex, 1);
+  return res.json({
+    success: true,
+    message: `Pengguna ${deletedUser.name} (${deletedUser.email}) berhasil dihapus.`
+  });
 });
 
 // GAS Code Exporter Endpoint

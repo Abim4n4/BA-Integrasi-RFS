@@ -5,7 +5,7 @@ export interface StoredUser {
   email: string;
   password?: string;
   name: string;
-  role: "admin" | "user";
+  role: "admin" | "user" | "waspang";
   position: string;
   department: string;
 }
@@ -37,6 +37,15 @@ export const DEFAULT_USERS: StoredUser[] = [
     role: "user",
     position: "Account Executive Enterprise",
     department: "Corporate Enterprise Sales"
+  },
+  {
+    id: "USR-004",
+    email: "waspang@rfs.telco.id",
+    password: "waspang123",
+    name: "Hendra Wijaya, S.T.",
+    role: "waspang",
+    position: "Pengawas Lapangan (Waspang)",
+    department: "Pengawasan & QA Proyek"
   }
 ];
 
@@ -68,6 +77,36 @@ export function saveLocalUser(newUser: StoredUser): boolean {
     return true;
   } catch (e) {
     console.error("Gagal menyimpan local user:", e);
+    return false;
+  }
+}
+
+export function updateLocalUser(id: string, updatedData: Partial<StoredUser>): boolean {
+  try {
+    const users = getLocalUsers();
+    const index = users.findIndex(u => u.id === id);
+    if (index === -1) return false;
+    users[index] = {
+      ...users[index],
+      ...updatedData
+    };
+    localStorage.setItem("rfs_local_users", JSON.stringify(users));
+    return true;
+  } catch (e) {
+    console.error("Gagal mengupdate local user:", e);
+    return false;
+  }
+}
+
+export function deleteLocalUser(id: string): boolean {
+  try {
+    const users = getLocalUsers();
+    const filtered = users.filter(u => u.id !== id);
+    if (filtered.length === users.length) return false;
+    localStorage.setItem("rfs_local_users", JSON.stringify(filtered));
+    return true;
+  } catch (e) {
+    console.error("Gagal menghapus local user:", e);
     return false;
   }
 }

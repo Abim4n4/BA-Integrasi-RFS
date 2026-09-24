@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Printer, X, ShieldCheck, HardDrive, Mail, Check, ExternalLink, RefreshCw, Layers, Info, CheckCircle2, Scissors, FileDown, ZoomIn, ZoomOut } from "lucide-react";
+import { Printer, X, ShieldCheck, HardDrive, Mail, Check, ExternalLink, RefreshCw, Layers, Info, CheckCircle2, Scissors, FileDown, ZoomIn, ZoomOut, Copy, Save } from "lucide-react";
 import { BeritaAcaraRFS, PocEvidenceItem } from "../types.ts";
 import { FmkaOfficialKop } from "./FmkaHeader.tsx";
 import { uploadBaDocumentToDrive, sendBaEmailNotification } from "../services/googleWorkspace.ts";
@@ -10,9 +10,10 @@ interface DocumentModalProps {
   record: BeritaAcaraRFS | null;
   onClose: () => void;
   onToast?: (msg: string, type: "success" | "error") => void;
+  onCloneRecord?: (record: BeritaAcaraRFS) => void;
 }
 
-export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, onToast }) => {
+export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, onToast, onCloneRecord }) => {
   if (!record) return null;
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -143,10 +144,10 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
     }, 60);
   };
 
-  const handleDownloadPdf = async (target?: "all" | "page1" | "page2") => {
+  const handleDownloadPdf = async (target?: "all" | "page1" | "page2", saveMode: "save-as" | "download" = "save-as") => {
     const selectedTarget = target || printTarget;
     setIsDownloadingPdf(true);
-    setPdfDownloadProgress("Menyiapkan lembar dokumen...");
+    setPdfDownloadProgress(saveMode === "save-as" ? "Membuka Save As..." : "Menyiapkan lembar dokumen...");
 
     const prevTarget = printTarget;
     try {
@@ -156,13 +157,14 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
         await new Promise(r => setTimeout(r, 120));
       }
 
-      await generateAndDownloadPdf(record, {
+      const ok = await generateAndDownloadPdf(record, {
         targetPages: selectedTarget,
+        saveMode,
         onProgress: (msg) => setPdfDownloadProgress(msg)
       });
 
-      if (onToast) {
-        onToast(`Dokumen PDF (${selectedTarget === "all" ? "2 Lembar Pas A4" : selectedTarget === "page1" ? "Lembar 1" : "Lembar 2"}) berhasil diunduh!`, "success");
+      if (ok && onToast) {
+        onToast(`Dokumen PDF (${selectedTarget === "all" ? "2 Lembar Pas A4" : selectedTarget === "page1" ? "Lembar 1" : "Lembar 2"}) berhasil disimpan!`, "success");
       }
     } catch (err: any) {
       console.error("Gagal generate PDF langsung:", err);
@@ -260,13 +262,25 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
 
         <div className="w-px h-4 bg-slate-700 mx-0.5" />
 
+        {/* Save As PDF Button (Native File Picker) */}
+        <button
+          onClick={() => handleDownloadPdf("all", "save-as")}
+          disabled={isDownloadingPdf}
+          id="btn-saveas-pdf-action"
+          className="px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50 cursor-pointer active:scale-95"
+          title="Simpan Sebagai (Save As) - Buka dialog pilih folder di komputer Anda dan simpan file PDF"
+        >
+          <Save className="w-3.5 h-3.5" />
+          <span>Save As PDF</span>
+        </button>
+
         {/* Download PDF Button */}
         <button
-          onClick={() => handleDownloadPdf("all")}
+          onClick={() => handleDownloadPdf("all", "download")}
           disabled={isDownloadingPdf}
           id="btn-download-pdf-action"
           className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50 cursor-pointer active:scale-95"
-          title="Unduh langsung dokumen Berita Acara ke file PDF (.pdf)"
+          title="Unduh langsung dokumen Berita Acara ke folder Downloads (.pdf)"
         >
           {isDownloadingPdf ? (
             <>
@@ -276,7 +290,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
           ) : (
             <>
               <FileDown className="w-3.5 h-3.5" />
-              <span>Download PDF</span>
+              <span>Unduh PDF</span>
             </>
           )}
         </button>
@@ -291,6 +305,21 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
           <Printer className="w-3.5 h-3.5" />
           <span>Cetak</span>
         </button>
+
+        {/* Clone / Duplikat BA Button */}
+        {onCloneRecord && (
+          <button
+            onClick={() => {
+              onCloneRecord(record);
+              onClose();
+            }}
+            className="px-3 py-1.5 rounded-full bg-slate-700 hover:bg-slate-600 text-white font-semibold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+            title="Gunakan data dokumen ini sebagai template untuk membuat Berita Acara baru (Cloning)"
+          >
+            <Copy className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Clone BA</span>
+          </button>
+        )}
 
         {/* Google Drive Upload Button */}
         <button

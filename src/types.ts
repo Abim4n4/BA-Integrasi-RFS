@@ -8,7 +8,7 @@ export type ThemeMode =
 
 export type FontSizeMode = 'normal' | 'waspang' | 'extra';
 
-export type UserRole = 'admin' | 'user';
+export type UserRole = 'admin' | 'user' | 'waspang';
 
 export interface User {
   id: string;

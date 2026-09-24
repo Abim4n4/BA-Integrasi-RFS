@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Send,
   Sparkles,
@@ -30,7 +30,9 @@ import {
   Barcode,
   Radio,
   ScanLine,
-  Zap
+  Zap,
+  Copy,
+  X
 } from "lucide-react";
 import { BeritaAcaraRFS, ServiceType, BandwidthUnit, RfsStatus, AiAnalysisResult, User, PocEvidenceItem } from "../types.ts";
 import { DigitalSignaturePad } from "./DigitalSignaturePad.tsx";
@@ -43,15 +45,22 @@ interface FormRfsProps {
   currentUser: User | null;
   onSuccessSubmit: (newRecord: BeritaAcaraRFS) => void;
   onViewPrintDoc: (record: BeritaAcaraRFS) => void;
+  cloneRecord?: BeritaAcaraRFS | null;
+  onClearClone?: () => void;
 }
 
 export const FormRfs: React.FC<FormRfsProps> = ({
   currentUser,
   onSuccessSubmit,
-  onViewPrintDoc
+  onViewPrintDoc,
+  cloneRecord,
+  onClearClone
 }) => {
   const today = new Date().toISOString().split("T")[0];
   const currentTimeStr = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+
+  const [isCloning, setIsCloning] = useState(false);
+  const [clonedSourceNoBa, setClonedSourceNoBa] = useState("");
 
   const [formData, setFormData] = useState({
     noBa: `BA-RFS/TELCO/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}/${Math.floor(1000 + Math.random() * 9000)}`,
@@ -59,19 +68,19 @@ export const FormRfs: React.FC<FormRfsProps> = ({
     waktu: currentTimeStr,
     isp: "PT Solusi Jaringan Nusantara (ISP)",
     customerName: "PT Solusi Jaringan Nusantara (ISP)",
-    locationName: "",
-    siteName: "",
-    siteAddress: "",
-    gpsCoordinates: "",
+    locationName: "Paradise Serpong II",
+    siteName: "Paradise Serpong II",
+    siteAddress: "Perumahan Paradise Serpong City 2, Babakan, Setu, Tangerang Selatan, Banten",
+    gpsCoordinates: "-6.353412, 106.689215",
     serviceType: "Dedicated" as ServiceType,
-    subscribedBandwidth: 500,
+    subscribedBandwidth: 100,
     bandwidthUnit: "Mbps" as BandwidthUnit,
     // Spesifikasi Layanan Lapangan (Checklist)
     backboneMedia: "Fiber Optic" as 'Wireless' | 'Fiber Optic',
     systems: ["FTTH", "Integrator"] as string[],
     backboneProvider: "Fiberstar",
-    testNotes: "RFS Done, Bandwidth sudah dilakukan pengetestan",
-    pocSpeedtest: "500 Mbps",
+    testNotes: "RFS Done, Bandwidth cluster Paradise Serpong II telah diuji stabil",
+    pocSpeedtest: "100 Mbps",
     pocBrowsing: ["Banking", "Berita", "Games", "Toko Online", "Live Streaming", "Youtube"] as string[],
     // Evident Uji Layanan
     evidentSpeedtest: "",
@@ -80,28 +89,89 @@ export const FormRfs: React.FC<FormRfsProps> = ({
     // Detail Pemasangan Perangkat & Interface (Point 3 Checklist)
     deviceInstalled: true,
     deviceType: "Huawei SmartAX MA5671A",
-    serialNumber: "ZTEGCA82B391F0",
+    serialNumber: "HWTC10928374",
     interfaceType: "SFP 1G" as 'SFP 1G' | 'SFP 10G' | 'LAN RJ45',
     // Matriks Bukti Uji POC (Default 6 Pilar Ringkas Rekomendasi Lapangan, dapat diganti ke 21)
     evidentPocGallery: [...COMPACT_POC_ITEMS] as PocEvidenceItem[],
     closingStatement: DEFAULT_CLOSING_STATEMENT,
-    downloadSpeed: 498.5,
-    uploadSpeed: 495.2,
-    pingLatency: 12.0,
-    jitter: 1.5,
+    downloadSpeed: 98.4,
+    uploadSpeed: 97.2,
+    pingLatency: 4.8,
+    jitter: 0.9,
     packetLoss: 0.0,
     technicianName: currentUser?.name || "Rian Pratama",
     technicianPhone: "0812-3456-7890",
-    picCustomerName: "Ir. Maulana Yusuf",
-    picCustomerPhone: "0813-1122-3344",
+    picCustomerName: "Ahmad Zaki",
+    picCustomerPhone: "0813-8899-7711",
     salesName: "",
     approvedByName: "",
     ispSignerName: "PT Solusi Jaringan Nusantara (ISP)",
     waspangSignerName: "Ir. Joko Sutrisno (WASPANG)",
     neSignerName: "Bambang Kurniawan, S.T. (NE)",
     status: "Ready For Service" as RfsStatus,
-    generalNotes: ""
+    generalNotes: "Aktivasi OLT ke OTB di cluster Paradise Serpong II berhasil stabil. Redaman optik -17.8 dBm (Sangat Baik)."
   });
+
+  // Populate from cloneRecord if requested
+  useEffect(() => {
+    if (cloneRecord) {
+      const year = new Date().getFullYear();
+      const month = String(new Date().getMonth() + 1).padStart(2, "0");
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const newNoBa = `BA-RFS/TELCO/${year}/${month}/${randomSuffix}`;
+
+      setFormData(prev => ({
+        ...prev,
+        noBa: newNoBa,
+        tanggal: today,
+        waktu: currentTimeStr,
+        locationName: cloneRecord.locationName || cloneRecord.siteName || "",
+        siteName: cloneRecord.locationName || cloneRecord.siteName || "",
+        isp: cloneRecord.isp || cloneRecord.customerName || "PT Solusi Jaringan Nusantara (ISP)",
+        customerName: cloneRecord.isp || cloneRecord.customerName || "PT Solusi Jaringan Nusantara (ISP)",
+        siteAddress: cloneRecord.siteAddress || "",
+        gpsCoordinates: cloneRecord.gpsCoordinates || "",
+        subscribedBandwidth: Number(cloneRecord.subscribedBandwidth) || 100,
+        bandwidthUnit: (cloneRecord.bandwidthUnit as BandwidthUnit) || "Mbps",
+        serviceType: (cloneRecord.serviceType as ServiceType) || "Dedicated",
+        backboneMedia: (cloneRecord.backboneMedia as 'Wireless' | 'Fiber Optic') || "Fiber Optic",
+        systems: cloneRecord.systems || ["FTTH", "Integrator"],
+        backboneProvider: cloneRecord.backboneProvider || "Fiberstar",
+        testNotes: cloneRecord.testNotes || "RFS Done, Bandwidth cluster telah diuji stabil",
+        pocSpeedtest: cloneRecord.pocSpeedtest || "100 Mbps",
+        pocBrowsing: cloneRecord.pocBrowsing || ["Banking", "Berita", "Games", "Toko Online", "Live Streaming", "Youtube"],
+        deviceInstalled: cloneRecord.deviceInstalled ?? true,
+        deviceType: cloneRecord.deviceType || "Huawei SmartAX MA5671A",
+        serialNumber: cloneRecord.serialNumber || "HWTC10928374",
+        interfaceType: (cloneRecord.interfaceType as 'SFP 1G' | 'SFP 10G' | 'LAN RJ45') || "SFP 1G",
+        evidentPocGallery: cloneRecord.evidentPocGallery || [...COMPACT_POC_ITEMS],
+        closingStatement: cloneRecord.closingStatement || DEFAULT_CLOSING_STATEMENT,
+        downloadSpeed: Number(cloneRecord.downloadSpeed) || 98.4,
+        uploadSpeed: Number(cloneRecord.uploadSpeed) || 97.2,
+        pingLatency: Number(cloneRecord.pingLatency) || 4.8,
+        jitter: Number(cloneRecord.jitter) || 0.9,
+        packetLoss: Number(cloneRecord.packetLoss) || 0.0,
+        technicianName: cloneRecord.technicianName || currentUser?.name || "Rian Pratama",
+        technicianPhone: cloneRecord.technicianPhone || "0812-3456-7890",
+        picCustomerName: cloneRecord.picCustomerName || "Ahmad Zaki",
+        picCustomerPhone: cloneRecord.picCustomerPhone || "0813-8899-7711",
+        salesName: cloneRecord.salesName || "",
+        approvedByName: cloneRecord.approvedByName || "",
+        ispSignerName: cloneRecord.ispSignerName || "PT Solusi Jaringan Nusantara (ISP)",
+        waspangSignerName: cloneRecord.waspangSignerName || "Ir. Joko Sutrisno (WASPANG)",
+        neSignerName: cloneRecord.neSignerName || "Bambang Kurniawan, S.T. (NE)",
+        status: (cloneRecord.status as RfsStatus) || "Ready For Service",
+        generalNotes: cloneRecord.generalNotes || ""
+      }));
+
+      // Reset digital signatures for fresh review
+      setSigIsp("");
+      setSigWaspang("");
+      setSigNe("");
+      setIsCloning(true);
+      setClonedSourceNoBa(cloneRecord.noBa || "BA Sumber");
+    }
+  }, [cloneRecord]);
 
   // 3 Digital Signature States: 1. ISP, 2. WASPANG, 3. NE
   const [sigIsp, setSigIsp] = useState<string>("");
@@ -473,7 +543,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
     }
   };
 
-  // Quick fill preset sample data
+  // Quick fill preset sample data - Official Paradise Serpong II template
   const handleFillDemoData = () => {
     setFormData({
       noBa: `BA-RFS/TELCO/${new Date().getFullYear()}/09/${Math.floor(1000 + Math.random() * 9000)}`,
@@ -481,55 +551,85 @@ export const FormRfs: React.FC<FormRfsProps> = ({
       waktu: currentTimeStr,
       isp: "PT Solusi Jaringan Nusantara (ISP)",
       customerName: "PT Solusi Jaringan Nusantara (ISP)",
-      locationName: "Cyber Tower 2, Lantai 18 - IDC Data Center",
-      siteName: "Cyber Tower 2, Lantai 18 - IDC Data Center",
-      siteAddress: "Jl. HR Rasuna Said Blok X-5 No. 13, Kuningan Timur, Jakarta Selatan [GPS: -6.224152, 106.831518]",
-      gpsCoordinates: "-6.224152, 106.831518",
+      locationName: "Paradise Serpong II",
+      siteName: "Paradise Serpong II",
+      siteAddress: "Perumahan Paradise Serpong City 2, Babakan, Setu, Tangerang Selatan, Banten",
+      gpsCoordinates: "-6.353412, 106.689215",
       serviceType: "Dedicated",
-      subscribedBandwidth: 500,
+      subscribedBandwidth: 100,
       bandwidthUnit: "Mbps",
       backboneMedia: "Fiber Optic",
       systems: ["FTTH", "Integrator"],
       backboneProvider: "Fiberstar",
-      testNotes: "RFS Done, Bandwidth sudah dilakukan pengetestan",
-      pocSpeedtest: "500 Mbps",
+      testNotes: "RFS Done, Bandwidth cluster Paradise Serpong II telah diuji stabil",
+      pocSpeedtest: "100 Mbps",
       pocBrowsing: ["Banking", "Berita", "Games", "Toko Online", "Live Streaming", "Youtube"],
       evidentSpeedtest: "",
       evidentRedamanOpm: "",
       evidentPerangkat: "",
       deviceInstalled: true,
       deviceType: "Huawei SmartAX MA5671A",
-      serialNumber: "ZTEGCA82B391F0",
+      serialNumber: "HWTC10928374",
       interfaceType: "SFP 1G",
-      evidentPocGallery: [...DEFAULT_POC_ITEMS],
+      evidentPocGallery: [...COMPACT_POC_ITEMS],
       closingStatement: DEFAULT_CLOSING_STATEMENT,
-      downloadSpeed: 498.6,
-      uploadSpeed: 496.2,
-      pingLatency: 8.4,
-      jitter: 1.2,
+      downloadSpeed: 98.4,
+      uploadSpeed: 97.2,
+      pingLatency: 4.8,
+      jitter: 0.9,
       packetLoss: 0.0,
       technicianName: currentUser?.name || "Rian Pratama",
-      technicianPhone: "0812-8899-0011",
-      picCustomerName: "Ir. Maulana Yusuf",
-      picCustomerPhone: "0813-1122-3344",
+      technicianPhone: "0812-3456-7890",
+      picCustomerName: "Ahmad Zaki",
+      picCustomerPhone: "0813-8899-7711",
       salesName: "",
       approvedByName: "",
       ispSignerName: "PT Solusi Jaringan Nusantara (ISP)",
       waspangSignerName: "Ir. Joko Sutrisno (WASPANG)",
       neSignerName: "Bambang Kurniawan, S.T. (NE)",
       status: "Ready For Service",
-      generalNotes: "Instalasi ODF 24 Core selesai, OPM TX/RX -19.4 dBm. Berjalan sangat stabil tanpa error."
+      generalNotes: "Aktivasi OLT ke OTB di cluster Paradise Serpong II berhasil stabil. Redaman optik -17.8 dBm (Sangat Baik)."
     });
     setGpsData({
-      lat: -6.224152,
-      lng: 106.831518,
-      accuracy: 12,
+      lat: -6.353412,
+      lng: 106.689215,
+      accuracy: 8,
       timestamp: new Date().toLocaleTimeString("id-ID")
     });
   };
 
   return (
     <div className="max-w-5xl mx-auto py-4 sm:py-6 space-y-6 animate-in fade-in duration-200">
+      {/* Banner Notifikasi Duplikasi / Clone BA */}
+      {isCloning && (
+        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between gap-3 text-emerald-800 dark:text-emerald-300">
+          <div className="flex items-center gap-2.5">
+            <Copy className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div>
+              <p className="text-xs font-bold">
+                Mode Duplikasi / Clone BA Aktif
+              </p>
+              <p className="text-[11px] opacity-80">
+                Data berhasil disalin dari <span className="font-semibold">{clonedSourceNoBa}</span>. Nomor BA baru dan waktu hari ini telah dibuat otomatis. Silakan periksa kembali dan bubuhkan tanda tangan baru.
+              </p>
+            </div>
+          </div>
+          {onClearClone && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsCloning(false);
+                onClearClone();
+              }}
+              className="p-1.5 rounded-lg hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 transition-colors"
+              title="Tutup notifikasi cloning"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Form Title & Quick Preset */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 surface-card p-4 sm:p-5 rounded-2xl border">
         <div>

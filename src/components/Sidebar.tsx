@@ -203,12 +203,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </p>
             )}
 
-            {/* 3. Panel Khusus Admin (with PRO Badge) */}
+            {/* 3. Panel Admin (with PRO Badge) */}
             {currentUser?.role === "admin" && (
               <button
                 id="tab-btn-admin"
                 onClick={() => handleNavClick("admin")}
-                title="Panel Khusus Admin (PRO)"
+                title="Panel Admin (PRO)"
                 className={`w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
                   activeTab === "admin"
                     ? "surface-elevated text-main font-bold border border-subtle shadow-sm neon-glow"
@@ -229,7 +229,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 {(!isCollapsed || mobileOpen) && (
                   <div className="flex items-center justify-between flex-1 truncate">
-                    <span className="truncate">Panel Khusus Admin</span>
+                    <span className="truncate">Panel Admin</span>
                     <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold ml-1.5 shrink-0">
                       PRO
                     </span>
@@ -362,7 +362,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
                     currentUser.role === "admin"
                       ? "bg-amber-500/20 text-amber-500 border border-amber-500/40"
-                      : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/40"
+                      : currentUser.role === "waspang"
+                        ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/40"
+                        : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/40"
                   }`}
                   title={`${currentUser.name} (${currentUser.position})`}
                 >
@@ -377,11 +379,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <p className="text-[10px] text-muted flex items-center gap-1 truncate">
                       <span
                         className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
-                          currentUser.role === "admin" ? "bg-amber-400" : "bg-emerald-400"
+                          currentUser.role === "admin"
+                            ? "bg-amber-400"
+                            : currentUser.role === "waspang"
+                              ? "bg-indigo-400"
+                              : "bg-emerald-400"
                         }`}
                       />
                       <span className="uppercase font-semibold tracking-wider truncate">
-                        {currentUser.role === "admin" ? "Super Admin" : "Field Engineer"}
+                        {currentUser.role === "admin"
+                          ? "Super Admin"
+                          : currentUser.role === "waspang"
+                            ? "Waspang Lapangan"
+                            : "Field Engineer"}
                       </span>
                     </p>
                   </div>
