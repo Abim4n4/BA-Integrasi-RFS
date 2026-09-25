@@ -13,6 +13,7 @@ import { GasExportModal } from "./components/GasExportModal.tsx";
 import { DocumentModal } from "./components/DocumentModal.tsx";
 import { LoginModal } from "./components/LoginModal.tsx";
 import { PoMaterialPanel } from "./components/PoMaterialPanel.tsx";
+import { LinkBudgetPanel } from "./components/LinkBudgetPanel.tsx";
 import {
   CheckCircle2,
   AlertCircle,
@@ -25,9 +26,9 @@ import {
   Code2,
   Cloud,
   Sparkles,
-  PackageCheck
+  PackageCheck,
+  Gauge
 } from "lucide-react";
-import { FmkaLogo } from "./components/FmkaHeader.tsx";
 import { testFirestoreConnection } from "./lib/firebase.ts";
 import {
   fetchRecordsFromFirestore,
@@ -58,7 +59,15 @@ export default function App() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   // Tab Navigation state
-  const [activeTab, setActiveTab] = useState<"form" | "table" | "po" | "admin" | "gas">("form");
+  const [activeTab, setActiveTab] = useState<"form" | "table" | "po" | "linkbudget" | "admin" | "gas">("form");
+
+  // Prefill data from Link Budget & TesCom to Form BA-RFS
+  const [prefillLinkBudget, setPrefillLinkBudget] = useState<{
+    measuredDbm: number;
+    odpName: string;
+    clusterName: string;
+    notes: string;
+  } | null>(null);
 
   // Sidebar Collapse & Mobile Drawer state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -350,10 +359,10 @@ export default function App() {
       {/* 1. Splash Loader while verifying session */}
       {isCheckingSession && (
         <div className="fixed inset-0 z-[100] surface-base flex flex-col items-center justify-center p-4">
-          <div className="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center p-2 border border-slate-700 shadow-xl mb-3 animate-pulse">
-            <FmkaLogo className="w-8 h-8" />
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center font-black text-sm shadow-md mb-3 animate-pulse">
+            BWA
           </div>
-          <p className="text-xs font-semibold text-main">Memuat portal BA Integrasi RFS...</p>
+          <p className="text-xs font-semibold text-main">Memuat portal Bima Waluya Apps...</p>
         </div>
       )}
 
@@ -428,7 +437,7 @@ export default function App() {
                 <div className="flex items-center gap-2 min-w-0">
                   <TableProperties className="w-4 h-4 accent-color shrink-0" />
                   <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
-                    Tabel Rekapan DataBA
+                    Tbl Rek BA
                   </h2>
                 </div>
               )}
@@ -438,6 +447,19 @@ export default function App() {
                   <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
                     PO Material
                   </h2>
+                </div>
+              )}
+              {activeTab === "linkbudget" && (
+                <div className="flex items-center gap-2 min-w-0">
+                  <Gauge className="w-4 h-4 text-teal-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
+                      LinkB &amp; TesCom
+                    </h2>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold shrink-0">
+                      OPM
+                    </span>
+                  </div>
                 </div>
               )}
               {activeTab === "admin" && (
@@ -513,19 +535,11 @@ export default function App() {
               </button>
             </div>
 
-            {/* FMKA Corporate Logo Badge */}
-            <div className="hidden xl:flex items-center gap-2 pr-3 border-r border-subtle shrink-0">
-              <div className="w-7 h-7 rounded-full bg-slate-950 flex items-center justify-center p-0.5 border border-slate-700 shadow-sm">
-                <FmkaLogo className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="text-[10.5px] font-black tracking-tight text-main leading-none uppercase">
-                  PT. FAJAR MITRA KRIDA ABADI
-                </span>
-                <span className="text-[9px] italic font-serif text-muted">
-                  Telecommunication &amp; Civil Contractor
-                </span>
-              </div>
+            {/* App Title Badge */}
+            <div className="hidden xl:flex items-center pr-3 border-r border-subtle shrink-0">
+              <span className="text-[11px] font-black tracking-wider text-main uppercase">
+                BIMA WALUYA APPS
+              </span>
             </div>
 
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold surface-elevated border text-muted shrink-0">
@@ -557,7 +571,7 @@ export default function App() {
         </header>
 
         {/* Main Tab Content */}
-        <main className="px-4 sm:px-6 py-6 pb-16 flex-1 max-w-7xl mx-auto w-full">
+        <main className="px-3 sm:px-6 py-4 sm:py-6 pb-16 flex-1 max-w-7xl 2xl:max-w-[1560px] mx-auto w-full">
           {activeTab === "form" && (
             <FormRfs
               currentUser={currentUser}
@@ -565,6 +579,8 @@ export default function App() {
               onViewPrintDoc={setSelectedDoc}
               cloneRecord={cloningRecord}
               onClearClone={() => setCloningRecord(null)}
+              prefillLinkBudgetData={prefillLinkBudget}
+              onClearPrefillLinkBudget={() => setPrefillLinkBudget(null)}
             />
           )}
 
@@ -584,6 +600,18 @@ export default function App() {
 
           {activeTab === "po" && (
             <PoMaterialPanel currentUser={currentUser} onShowToast={showToast} />
+          )}
+
+          {activeTab === "linkbudget" && (
+            <LinkBudgetPanel
+              currentUser={currentUser}
+              onShowToast={showToast}
+              onApplyToRfsForm={(data) => {
+                setPrefillLinkBudget(data);
+                setActiveTab("form");
+                showToast(`Hasil TesCom ODP (${data.odpName} • ${data.measuredDbm} dBm) berhasil ditautkan ke Form BA-RFS!`, "success");
+              }}
+            />
           )}
 
           {activeTab === "admin" && currentUser?.role === "admin" && (

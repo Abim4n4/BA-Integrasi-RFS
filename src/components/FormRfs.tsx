@@ -47,6 +47,13 @@ interface FormRfsProps {
   onViewPrintDoc: (record: BeritaAcaraRFS) => void;
   cloneRecord?: BeritaAcaraRFS | null;
   onClearClone?: () => void;
+  prefillLinkBudgetData?: {
+    measuredDbm: number;
+    odpName: string;
+    clusterName: string;
+    notes: string;
+  } | null;
+  onClearPrefillLinkBudget?: () => void;
 }
 
 export const FormRfs: React.FC<FormRfsProps> = ({
@@ -54,7 +61,9 @@ export const FormRfs: React.FC<FormRfsProps> = ({
   onSuccessSubmit,
   onViewPrintDoc,
   cloneRecord,
-  onClearClone
+  onClearClone,
+  prefillLinkBudgetData,
+  onClearPrefillLinkBudget
 }) => {
   const today = new Date().toISOString().split("T")[0];
   const currentTimeStr = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
@@ -76,7 +85,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
     subscribedBandwidth: 100,
     bandwidthUnit: "Mbps" as BandwidthUnit,
     // Spesifikasi Layanan Lapangan (Checklist)
-    backboneMedia: "Fiber Optic" as 'Wireless' | 'Fiber Optic',
+    backboneMedia: "FO" as 'Wireless' | 'Fiber Optic' | 'FO',
     systems: ["FTTH", "Integrator"] as string[],
     backboneProvider: "Fiberstar",
     testNotes: "RFS Done, Bandwidth cluster Paradise Serpong II telah diuji stabil",
@@ -134,7 +143,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
         subscribedBandwidth: Number(cloneRecord.subscribedBandwidth) || 100,
         bandwidthUnit: (cloneRecord.bandwidthUnit as BandwidthUnit) || "Mbps",
         serviceType: (cloneRecord.serviceType as ServiceType) || "Dedicated",
-        backboneMedia: (cloneRecord.backboneMedia as 'Wireless' | 'Fiber Optic') || "Fiber Optic",
+        backboneMedia: (cloneRecord.backboneMedia as 'Wireless' | 'Fiber Optic' | 'FO') || "FO",
         systems: cloneRecord.systems || ["FTTH", "Integrator"],
         backboneProvider: cloneRecord.backboneProvider || "Fiberstar",
         testNotes: cloneRecord.testNotes || "RFS Done, Bandwidth cluster telah diuji stabil",
@@ -172,6 +181,18 @@ export const FormRfs: React.FC<FormRfsProps> = ({
       setClonedSourceNoBa(cloneRecord.noBa || "BA Sumber");
     }
   }, [cloneRecord]);
+
+  // Handle prefill from Link Budget & TesCom System
+  useEffect(() => {
+    if (prefillLinkBudgetData) {
+      setFormData(prev => ({
+        ...prev,
+        locationName: prefillLinkBudgetData.clusterName || prev.locationName,
+        testNotes: `[TesCom OPM] ${prefillLinkBudgetData.odpName}: ${prefillLinkBudgetData.measuredDbm} dBm. ${prefillLinkBudgetData.notes || ""}`.trim(),
+        generalNotes: `Hasil uji redaman optik link budget terukur ${prefillLinkBudgetData.measuredDbm} dBm di titik ${prefillLinkBudgetData.odpName}. Memenuhi standar ITU-T G.984.`
+      }));
+    }
+  }, [prefillLinkBudgetData]);
 
   // 3 Digital Signature States: 1. ISP, 2. WASPANG, 3. NE
   const [sigIsp, setSigIsp] = useState<string>("");
@@ -558,7 +579,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
       serviceType: "Dedicated",
       subscribedBandwidth: 100,
       bandwidthUnit: "Mbps",
-      backboneMedia: "Fiber Optic",
+      backboneMedia: "FO",
       systems: ["FTTH", "Integrator"],
       backboneProvider: "Fiberstar",
       testNotes: "RFS Done, Bandwidth cluster Paradise Serpong II telah diuji stabil",
@@ -630,6 +651,33 @@ export const FormRfs: React.FC<FormRfsProps> = ({
         </div>
       )}
 
+      {/* Banner Notifikasi Prefill dari Link Budget & TesCom */}
+      {prefillLinkBudgetData && (
+        <div className="bg-teal-500/10 border-2 border-teal-500/30 rounded-2xl p-4 flex items-center justify-between gap-3 text-teal-900 dark:text-teal-200">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 text-teal-600 shrink-0" />
+            <div>
+              <p className="text-xs font-bold">
+                Data Hasil Uji Redaman Optik (TesCom Lapangan) Berhasil Diterapkan ke BA-RFS
+              </p>
+              <p className="text-[11px] opacity-80">
+                Nilai redaman rata-rata OPM terukur <strong>{prefillLinkBudgetData.measuredDbm} dBm</strong> di titik <strong>{prefillLinkBudgetData.odpName}</strong> telah otomatis diisikan ke catatan teknis Berita Acara.
+              </p>
+            </div>
+          </div>
+          {onClearPrefillLinkBudget && (
+            <button
+              type="button"
+              onClick={onClearPrefillLinkBudget}
+              className="p-1.5 rounded-lg hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 transition-colors"
+              title="Tutup notifikasi Link Budget"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Form Title & Quick Preset */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 surface-card p-4 sm:p-5 rounded-2xl border">
         <div>
@@ -661,13 +709,13 @@ export const FormRfs: React.FC<FormRfsProps> = ({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* SECTION 1: ID DOC & LOKASI */}
+        {/* SECTION 1: Id Doc & Area */}
         <div className="surface-card rounded-2xl p-5 border space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-subtle">
             <div className="flex items-center gap-2">
               <Building className="w-4 h-4 accent-color" />
               <h3 className="text-sm font-bold text-main uppercase tracking-wider">
-                1. ID DOC  & LOKASI
+                Id Doc & Area
               </h3>
             </div>
             <span className="text-[10px] text-muted">Field ISP & Lokasi Geografis</span>
@@ -808,7 +856,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
           <div className="flex items-center gap-2 pb-2 border-b border-subtle">
             <Network className="w-4 h-4 accent-color" />
             <h3 className="text-sm font-bold text-main uppercase tracking-wider">
-              2. Spesifikasi Layanan & Hasil Uji Bandwidth
+              Layanan
             </h3>
           </div>
 
@@ -919,30 +967,19 @@ export const FormRfs: React.FC<FormRfsProps> = ({
               {/* Media Backbone */}
               <div className="p-3 rounded-lg border surface-card space-y-2">
                 <span className="block text-[11px] font-bold text-main uppercase tracking-wider">
-                  Backbone (Media)
+                  Backbone
                 </span>
                 <div className="flex items-center gap-4 text-xs">
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="backboneMedia"
-                      value="Wireless"
-                      checked={formData.backboneMedia === "Wireless"}
-                      onChange={() => setFormData(prev => ({ ...prev, backboneMedia: "Wireless" }))}
+                      value="FO"
+                      checked={formData.backboneMedia === "FO" || formData.backboneMedia === "Fiber Optic" || !formData.backboneMedia}
+                      onChange={() => setFormData(prev => ({ ...prev, backboneMedia: "FO" }))}
                       className="text-emerald-600 focus:ring-emerald-500 h-4 w-4"
                     />
-                    <span className="text-main">Wireless</span>
-                  </label>
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="backboneMedia"
-                      value="Fiber Optic"
-                      checked={formData.backboneMedia === "Fiber Optic"}
-                      onChange={() => setFormData(prev => ({ ...prev, backboneMedia: "Fiber Optic" }))}
-                      className="text-emerald-600 focus:ring-emerald-500 h-4 w-4"
-                    />
-                    <span className="text-main font-semibold">Fiber Optic</span>
+                    <span className="text-main font-semibold">FO</span>
                   </label>
                 </div>
               </div>
@@ -972,42 +1009,14 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 <span className="block text-[11px] font-bold text-main uppercase tracking-wider">
                   Backbone
                 </span>
-                <div className="space-y-1.5">
-                  <select
-                    value={
-                      formData.backboneProvider === "CBN" || formData.backboneProvider === "Fiberstar"
-                        ? formData.backboneProvider
-                        : "manual"
-                    }
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "manual") {
-                        setFormData(prev => ({
-                          ...prev,
-                          backboneProvider: (prev.backboneProvider === "CBN" || prev.backboneProvider === "Fiberstar") ? "" : prev.backboneProvider
-                        }));
-                      } else {
-                        setFormData(prev => ({ ...prev, backboneProvider: val }));
-                      }
-                    }}
-                    className="w-full text-xs font-semibold p-2 rounded-lg border surface-card text-main focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
-                  >
-                    <option value="CBN">CBN</option>
-                    <option value="Fiberstar">Fiberstar</option>
-                    <option value="manual">Lainnya / Isi Manual...</option>
-                  </select>
-
-                  {/* Input manual jika memilih opsi manual atau memiliki nilai custom selain CBN & Fiberstar */}
-                  {(formData.backboneProvider !== "CBN" && formData.backboneProvider !== "Fiberstar") && (
-                    <input
-                      type="text"
-                      value={formData.backboneProvider || ""}
-                      onChange={(e) => setFormData(prev => ({ ...prev, backboneProvider: e.target.value }))}
-                      placeholder="Ketik nama backbone manual..."
-                      className="w-full text-xs p-2 rounded-lg border surface-card text-main focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                      autoFocus
-                    />
-                  )}
+                <div>
+                  <input
+                    type="text"
+                    value={formData.backboneProvider ?? ""}
+                    onChange={(e) => setFormData(prev => ({ ...prev, backboneProvider: e.target.value }))}
+                    placeholder="Ketik nama backbone..."
+                    className="w-full text-xs font-semibold p-2 rounded-lg border surface-card text-main focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
                 </div>
               </div>
             </div>
@@ -1318,7 +1327,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
               <div className="flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-sky-500" />
                 <h4 className="text-xs font-bold text-main uppercase tracking-wider">
-                  Evident Pengujian Layanan (Foto / Tangkapan Layar)
+                  Evident
                 </h4>
               </div>
               <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
@@ -1445,7 +1454,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 <div className="flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-emerald-500" />
                   <h5 className="text-xs font-bold text-main uppercase tracking-wider">
-                    Spesifikasi Perangkat Terpasang &amp; Interface Uplink
+                    Perangkat Terpasang
                   </h5>
                 </div>
 
@@ -1625,7 +1634,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 <LayoutGrid className="w-4 h-4 text-emerald-500" />
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-bold text-main uppercase tracking-wider">
-                    EVIDENT MATRIX HASIL PENGUJIAN POC &amp; BROWSING LAYANAN
+                    POC Pengujian Layanan
                   </h4>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30">
                     {(formData.evidentPocGallery || []).length} Item Aktif
@@ -1782,7 +1791,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
           <div className="flex items-center gap-2 pb-2 border-b border-subtle">
             <Users className="w-4 h-4 accent-color" />
             <h3 className="text-sm font-bold text-main uppercase tracking-wider">
-              3. Pihak Terlibat & Penanggung Jawab
+              Pihak Terlibat
             </h3>
           </div>
 
@@ -1845,8 +1854,8 @@ export const FormRfs: React.FC<FormRfsProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-main mb-1">
+            <div className="text-center">
+              <label className="block text-xs font-semibold text-main mb-1 text-center">
                 ISP
               </label>
               <input
@@ -1855,12 +1864,12 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 value={formData.ispSignerName}
                 onChange={handleInputChange}
                 placeholder="Nama Perusahaan / Teknisi ISP"
-                className="w-full text-xs p-2.5 rounded-lg border surface-elevated text-main"
+                className="w-full text-xs p-2.5 rounded-lg border surface-elevated text-main text-center"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-main mb-1">
+            <div className="text-center">
+              <label className="block text-xs font-semibold text-main mb-1 text-center">
                 WASPANG FAMIKA
               </label>
               <input
@@ -1869,12 +1878,12 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 value={formData.waspangSignerName}
                 onChange={handleInputChange}
                 placeholder="Nama Pengawas Lapangan"
-                className="w-full text-xs p-2.5 rounded-lg border surface-elevated text-main"
+                className="w-full text-xs p-2.5 rounded-lg border surface-elevated text-main text-center"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-main mb-1">
+            <div className="text-center">
+              <label className="block text-xs font-semibold text-main mb-1 text-center">
                 Engineer
               </label>
               <input
@@ -1883,7 +1892,7 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                 value={formData.neSignerName}
                 onChange={handleInputChange}
                 placeholder="Nama Network Engineer"
-                className="w-full text-xs p-2.5 rounded-lg border surface-elevated text-main"
+                className="w-full text-xs p-2.5 rounded-lg border surface-elevated text-main text-center"
               />
             </div>
           </div>

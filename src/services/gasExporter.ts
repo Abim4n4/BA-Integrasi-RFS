@@ -576,10 +576,10 @@ export const INDEX_HTML_STANDALONE = `<!DOCTYPE html>
           <span>Formulir Input BA-RFS</span>
         </button>
 
-        <!-- 2. Tabel Rekapan DataBA -->
+        <!-- 2. Tbl Rek BA -->
         <button id="tab-btn-table" onclick="switchTab('table')" class="w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left theme-elevated">
           <span class="text-base">📊</span>
-          <span>Tabel Rekapan DataBA</span>
+          <span>Tbl Rek BA</span>
         </button>
       </div>
 
@@ -932,7 +932,7 @@ export const INDEX_HTML_STANDALONE = `<!DOCTYPE html>
 
       const titles = {
         form: 'Form Input BA RFS',
-        table: 'Tabel Rekapan DataBA',
+        table: 'Tbl Rek BA',
         admin: 'Panel Administrator',
         gas: 'Eksportir Kode GAS'
       };

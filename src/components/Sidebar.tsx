@@ -10,15 +10,16 @@ import {
   ChevronRight,
   Activity,
   Layers,
-  PackageCheck
+  PackageCheck,
+  Gauge
 } from "lucide-react";
 import { User, ThemeMode, FontSizeMode } from "../types.ts";
 import { ThemeSwitcher } from "./ThemeSwitcher.tsx";
 
 interface SidebarProps {
   currentUser: User | null;
-  activeTab: "form" | "table" | "po" | "admin" | "gas";
-  onTabChange: (tab: "form" | "table" | "po" | "admin" | "gas") => void;
+  activeTab: "form" | "table" | "po" | "linkbudget" | "admin" | "gas";
+  onTabChange: (tab: "form" | "table" | "po" | "linkbudget" | "admin" | "gas") => void;
   currentTheme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
   fontSize?: FontSizeMode;
@@ -68,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const handleNavClick = (tab: "form" | "table" | "po" | "admin" | "gas") => {
+  const handleNavClick = (tab: "form" | "table" | "po" | "linkbudget" | "admin" | "gas") => {
     onTabChange(tab);
     if (onCloseMobile) {
       onCloseMobile();
@@ -94,19 +95,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           mobileOpen ? "translate-x-0 w-72" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        {/* Brand Header: BA Integrasi RFS */}
+        {/* Brand Header: Bima Waluya Apps */}
         <div className="p-3.5 border-b border-subtle flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center font-extrabold text-xs shadow-md shrink-0 tracking-wider">
-              RFS
+              BWA
             </div>
             {(!isCollapsed || mobileOpen) && (
               <div className="min-w-0">
                 <h1 className="text-xs font-extrabold text-main tracking-tight truncate">
-                  BA Integrasi RFS
+                  Bima Waluya Apps
                 </h1>
                 <p className="text-[9.5px] text-muted truncate">
-                  PT. Fajar Mitra Krida Abadi
+                  Telecom &amp; Network Portal
                 </p>
               </div>
             )}
@@ -164,11 +165,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </button>
 
-            {/* 2. Tabel Rekapan DataBA */}
+            {/* 2. Tbl Rek BA */}
             <button
               id="tab-btn-table"
               onClick={() => handleNavClick("table")}
-              title="Tabel Rekapan DataBA"
+              title="Tbl Rek BA"
               className={`w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
                 activeTab === "table"
                   ? "surface-elevated text-main font-bold border border-subtle shadow-sm neon-glow"
@@ -188,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <TableProperties className="w-4 h-4 shrink-0" />
               </div>
               {(!isCollapsed || mobileOpen) && (
-                <span className="truncate flex-1 text-left">Tabel Rekapan DataBA</span>
+                <span className="truncate flex-1 text-left">Tbl Rek BA</span>
               )}
               {(!isCollapsed || mobileOpen) && activeTab === "table" && (
                 <ChevronRight className="w-3.5 h-3.5 accent-color shrink-0 ml-auto" />
@@ -222,6 +223,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="truncate flex-1 text-left">PO Material</span>
               )}
               {(!isCollapsed || mobileOpen) && activeTab === "po" && (
+                <ChevronRight className="w-3.5 h-3.5 accent-color shrink-0 ml-auto" />
+              )}
+            </button>
+
+            {/* 4. LinkB & TesCom */}
+            <button
+              id="tab-btn-linkbudget"
+              onClick={() => handleNavClick("linkbudget")}
+              title="LinkB & TesCom"
+              className={`w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                activeTab === "linkbudget"
+                  ? "surface-elevated text-main font-bold border border-subtle shadow-sm neon-glow"
+                  : "text-muted hover:text-main hover:surface-elevated"
+              }`}
+            >
+              {activeTab === "linkbudget" && (
+                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full accent-bg shadow-[0_0_10px_var(--accent)]" />
+              )}
+              <div
+                className={`p-1.5 rounded-lg transition-colors ${
+                  activeTab === "linkbudget"
+                    ? "accent-bg text-white shadow-sm"
+                    : "surface-muted text-teal-400 group-hover:text-teal-300"
+                }`}
+              >
+                <Gauge className="w-4 h-4 shrink-0" />
+              </div>
+              {(!isCollapsed || mobileOpen) && (
+                <div className="flex items-center justify-between flex-1 truncate">
+                  <span className="truncate">LinkB &amp; TesCom</span>
+                  <span className="text-[8.5px] px-1.5 py-0.2 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold ml-1.5 shrink-0">
+                    OPM
+                  </span>
+                </div>
+              )}
+              {(!isCollapsed || mobileOpen) && activeTab === "linkbudget" && (
                 <ChevronRight className="w-3.5 h-3.5 accent-color shrink-0 ml-auto" />
               )}
             </button>

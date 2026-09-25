@@ -722,21 +722,15 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
               {/* Tabel Spesifikasi Jaringan, Keterangan Lapangan, & Checklist POC Sesuai Standar RFS */}
               <div className="border border-slate-300 rounded p-2 print:p-1.5 bg-slate-50/50 text-[10.5px] print:text-[8px] space-y-1.5 print:space-y-1 mt-1.5 print:mt-1">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 print:gap-1 border-b border-slate-200 pb-1.5 print:pb-1">
-                  {/* Backbone Media */}
+                  {/* Backbone */}
                   <div>
-                    <span className="text-[9.5px] print:text-[7.5px] font-bold text-slate-500 block uppercase tracking-wider">Backbone (Media)</span>
+                    <span className="text-[9.5px] print:text-[7.5px] font-bold text-slate-500 block uppercase tracking-wider">Backbone</span>
                     <div className="flex items-center gap-2 mt-0.5 font-medium text-slate-800">
                       <span className="flex items-center gap-1">
-                        <span className={`w-3.5 h-3.5 print:w-3 print:h-3 rounded-sm border border-slate-500 flex items-center justify-center text-[9px] print:text-[7px] font-bold ${record.backboneMedia === 'Wireless' ? 'bg-slate-900 text-white' : 'bg-white'}`}>
-                          {record.backboneMedia === 'Wireless' ? '✓' : ''}
+                        <span className={`w-3.5 h-3.5 print:w-3 print:h-3 rounded-sm border border-slate-500 flex items-center justify-center text-[9px] print:text-[7px] font-bold ${record.backboneMedia === 'FO' || record.backboneMedia === 'Fiber Optic' || !record.backboneMedia ? 'bg-slate-900 text-white' : 'bg-white'}`}>
+                          {record.backboneMedia === 'FO' || record.backboneMedia === 'Fiber Optic' || !record.backboneMedia ? '✓' : ''}
                         </span>
-                        Wireless
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className={`w-3.5 h-3.5 print:w-3 print:h-3 rounded-sm border border-slate-500 flex items-center justify-center text-[9px] print:text-[7px] font-bold ${record.backboneMedia === 'Fiber Optic' || !record.backboneMedia ? 'bg-slate-900 text-white' : 'bg-white'}`}>
-                          {record.backboneMedia === 'Fiber Optic' || !record.backboneMedia ? '✓' : ''}
-                        </span>
-                        Fiber Optic
+                        FO
                       </span>
                     </div>
                   </div>
@@ -1202,7 +1196,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({ record, onClose, o
                   </span>
                   <div className="flex items-center gap-3">
                     <h3 className="text-base print:text-[13px] font-black tracking-tight text-slate-900 uppercase">
-                      EVIDENT MATRIX HASIL PENGUJIAN POC &amp; BROWSING LAYANAN
+                      POC Pengujian Layanan
                     </h3>
                     {(() => {
                       const rawGallery = (record.evidentPocGallery && record.evidentPocGallery.length > 0)

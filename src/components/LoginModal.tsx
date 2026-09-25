@@ -3,7 +3,6 @@ import { Lock, Mail, AlertCircle, ArrowRight, Sparkles, RefreshCw, Clock } from 
 import { User, ThemeMode, FontSizeMode } from "../types.ts";
 import { googleSignIn } from "../lib/firebase.ts";
 import { authenticate } from "../services/authService.ts";
-import { FmkaLogo } from "./FmkaHeader.tsx";
 import { ThemeSwitcher } from "./ThemeSwitcher.tsx";
 
 interface LoginModalProps {
@@ -114,18 +113,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     <div className="fixed inset-0 z-[100] surface-base overflow-y-auto flex flex-col justify-between animate-in fade-in duration-200">
       {/* Top Corporate & Preference Bar */}
       <header className="w-full surface-card border-b px-4 sm:px-8 py-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-slate-950 flex items-center justify-center p-1 border border-slate-700 shadow-sm">
-            <FmkaLogo className="w-7 h-7" />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="text-xs sm:text-sm font-black tracking-tight text-main uppercase">
-              PT. FAJAR MITRA KRIDA ABADI
-            </span>
-            <span className="text-[10px] sm:text-[11px] italic font-serif text-muted">
-              Telecommunication &amp; Civil Contractor • BA Integrasi RFS
-            </span>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs sm:text-sm font-black tracking-wider text-main uppercase">
+            BIMA WALUYA APPS
+          </span>
         </div>
 
         {/* Top Right Controls (Theme & Accessibility) */}
@@ -169,9 +160,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <div className="w-12 h-12 rounded-2xl accent-bg text-white mx-auto flex items-center justify-center shadow-lg mb-3">
               <Lock className="w-6 h-6" />
             </div>
-            <h2 className="text-lg font-extrabold text-main">Masuk BA Integrasi RFS</h2>
+            <h2 className="text-lg font-extrabold text-main">Masuk Bima Waluya Apps</h2>
             <p className="text-xs text-muted mt-1">
-              PT. Fajar Mitra Krida Abadi • Terintegrasi Cloud &amp; Google Workspace
+              Bima Waluya Apps • Terintegrasi Cloud &amp; Google Workspace
             </p>
           </div>
 
@@ -358,7 +349,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </span>
           )}
           <span className="hidden md:inline text-dim">•</span>
-          <span className="hidden md:inline text-[11px]">© 2026 PT. Fajar Mitra Krida Abadi</span>
+          <span className="hidden md:inline text-[11px]">© 2026 Bima Waluya Apps</span>
         </div>
       </footer>
     </div>

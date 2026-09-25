@@ -103,7 +103,7 @@ export const FmkaOfficialKop: React.FC<{
         {/* Kiri: Logo Lingkaran FMKA */}
         <FmkaLogo className="w-16 h-16 sm:w-20 sm:h-20 print:w-11 print:h-11" />
 
-        {/* Tengah: Nama & Bidang Perusahaan */}
+        {/* Tengah: Nama & Bidang Perusahaan Resmi BA-RFS */}
         <div className="flex-1 text-left sm:text-center pl-1 sm:pl-0">
           <h1 className="text-xl sm:text-2xl md:text-[26px] print:text-base font-black tracking-tight text-[#0f2858] uppercase font-sans leading-tight">
             PT. FAJAR MITRA KRIDA ABADI
