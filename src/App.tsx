@@ -12,6 +12,7 @@ import { AdminPanel } from "./components/AdminPanel.tsx";
 import { GasExportModal } from "./components/GasExportModal.tsx";
 import { DocumentModal } from "./components/DocumentModal.tsx";
 import { LoginModal } from "./components/LoginModal.tsx";
+import { PoMaterialPanel } from "./components/PoMaterialPanel.tsx";
 import {
   CheckCircle2,
   AlertCircle,
@@ -23,7 +24,8 @@ import {
   ShieldCheck,
   Code2,
   Cloud,
-  Sparkles
+  Sparkles,
+  PackageCheck
 } from "lucide-react";
 import { FmkaLogo } from "./components/FmkaHeader.tsx";
 import { testFirestoreConnection } from "./lib/firebase.ts";
@@ -56,7 +58,7 @@ export default function App() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   // Tab Navigation state
-  const [activeTab, setActiveTab] = useState<"form" | "table" | "admin" | "gas">("form");
+  const [activeTab, setActiveTab] = useState<"form" | "table" | "po" | "admin" | "gas">("form");
 
   // Sidebar Collapse & Mobile Drawer state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -426,6 +428,14 @@ export default function App() {
                   </h2>
                 </div>
               )}
+              {activeTab === "po" && (
+                <div className="flex items-center gap-2 min-w-0">
+                  <PackageCheck className="w-4 h-4 accent-color shrink-0" />
+                  <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
+                    Permohonan PO Pengadaan Material
+                  </h2>
+                </div>
+              )}
               {activeTab === "admin" && (
                 <div className="flex items-center gap-2 min-w-0">
                   <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
@@ -566,6 +576,10 @@ export default function App() {
               onShowToast={showToast}
               onAddWorkNote={handleAddWorkNote}
             />
+          )}
+
+          {activeTab === "po" && (
+            <PoMaterialPanel currentUser={currentUser} onShowToast={showToast} />
           )}
 
           {activeTab === "admin" && currentUser?.role === "admin" && (

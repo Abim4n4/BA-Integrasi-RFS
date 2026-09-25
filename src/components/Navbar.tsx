@@ -4,8 +4,8 @@ import { User, ThemeMode, FontSizeMode } from "../types.ts";
 
 interface NavbarProps {
   currentUser: User | null;
-  activeTab: "form" | "table" | "admin" | "gas";
-  onTabChange: (tab: "form" | "table" | "admin" | "gas") => void;
+  activeTab: "form" | "table" | "po" | "admin" | "gas";
+  onTabChange: (tab: "form" | "table" | "po" | "admin" | "gas") => void;
   currentTheme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
   fontSize?: FontSizeMode;

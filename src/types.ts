@@ -141,3 +141,33 @@ export interface BeritaAcaraRFS {
   driveFolderUrl?: string;
   sheetRowIndex?: number;
 }
+
+export interface PoMaterialItem {
+  id: string;
+  namaMaterial: string;
+  satuan: string;
+  volume: number | string;
+  keterangan: string;
+}
+
+export interface PoMaterialRequest {
+  id: string;
+  nomorSurat: string;
+  tanggalSurat: string;
+  lokasiProyek: string;
+  items: PoMaterialItem[];
+  notes: string;
+  creator1Name: string;
+  creator1Position: string;
+  creator2Name: string;
+  creator2Position: string;
+  approver1Name: string;
+  approver1Position: string;
+  approver2Name: string;
+  approver2Position: string;
+  signatureCreator1?: string;
+  signatureCreator2?: string;
+  signatureApprover1?: string;
+  signatureApprover2?: string;
+  createdAt: string;
+}

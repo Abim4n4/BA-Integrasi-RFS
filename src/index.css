@@ -292,7 +292,8 @@
   .modal-overlay,
   .surface-card,
   .print-document-container,
-  #printable-rfs-area {
+  #printable-rfs-area,
+  #po-official-document-sheet {
     position: static !important;
     background: transparent !important;
     backdrop-filter: none !important;

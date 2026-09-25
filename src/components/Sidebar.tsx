@@ -9,15 +9,16 @@ import {
   X,
   ChevronRight,
   Activity,
-  Layers
+  Layers,
+  PackageCheck
 } from "lucide-react";
 import { User, ThemeMode, FontSizeMode } from "../types.ts";
 import { ThemeSwitcher } from "./ThemeSwitcher.tsx";
 
 interface SidebarProps {
   currentUser: User | null;
-  activeTab: "form" | "table" | "admin" | "gas";
-  onTabChange: (tab: "form" | "table" | "admin" | "gas") => void;
+  activeTab: "form" | "table" | "po" | "admin" | "gas";
+  onTabChange: (tab: "form" | "table" | "po" | "admin" | "gas") => void;
   currentTheme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
   fontSize?: FontSizeMode;
@@ -67,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const handleNavClick = (tab: "form" | "table" | "admin" | "gas") => {
+  const handleNavClick = (tab: "form" | "table" | "po" | "admin" | "gas") => {
     onTabChange(tab);
     if (onCloseMobile) {
       onCloseMobile();
@@ -190,6 +191,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="truncate flex-1 text-left">Tabel Rekapan DataBA</span>
               )}
               {(!isCollapsed || mobileOpen) && activeTab === "table" && (
+                <ChevronRight className="w-3.5 h-3.5 accent-color shrink-0 ml-auto" />
+              )}
+            </button>
+
+            {/* 3. Permohonan PO Material */}
+            <button
+              id="tab-btn-po"
+              onClick={() => handleNavClick("po")}
+              title="Permohonan PO Pengadaan Material"
+              className={`w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                activeTab === "po"
+                  ? "surface-elevated text-main font-bold border border-subtle shadow-sm neon-glow"
+                  : "text-muted hover:text-main hover:surface-elevated"
+              }`}
+            >
+              {activeTab === "po" && (
+                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full accent-bg shadow-[0_0_10px_var(--accent)]" />
+              )}
+              <div
+                className={`p-1.5 rounded-lg transition-colors ${
+                  activeTab === "po"
+                    ? "accent-bg text-white shadow-sm"
+                    : "surface-muted text-muted group-hover:text-main"
+                }`}
+              >
+                <PackageCheck className="w-4 h-4 shrink-0" />
+              </div>
+              {(!isCollapsed || mobileOpen) && (
+                <span className="truncate flex-1 text-left">Permohonan PO Material</span>
+              )}
+              {(!isCollapsed || mobileOpen) && activeTab === "po" && (
                 <ChevronRight className="w-3.5 h-3.5 accent-color shrink-0 ml-auto" />
               )}
             </button>
