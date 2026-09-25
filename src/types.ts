@@ -169,5 +169,7 @@ export interface PoMaterialRequest {
   signatureCreator2?: string;
   signatureApprover1?: string;
   signatureApprover2?: string;
+  status?: 'Diajukan' | 'Disetujui' | 'Diproses' | 'Selesai';
   createdAt: string;
+  updatedAt?: string;
 }

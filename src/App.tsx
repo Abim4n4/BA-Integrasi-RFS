@@ -238,7 +238,11 @@ export default function App() {
   // Delete Record (Admin)
   const handleDeleteRecord = async (id: string) => {
     try {
-      await fetch(`/api/rfs/${id}`, { method: "DELETE" });
+      const token = localStorage.getItem("rfs_session_token");
+      await fetch(`/api/rfs/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       try {
         await deleteRecordFromFirestore(id);
       } catch (fsErr) {
@@ -432,7 +436,7 @@ export default function App() {
                 <div className="flex items-center gap-2 min-w-0">
                   <PackageCheck className="w-4 h-4 accent-color shrink-0" />
                   <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
-                    Permohonan PO Pengadaan Material
+                    PO Material
                   </h2>
                 </div>
               )}

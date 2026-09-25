@@ -7,7 +7,7 @@ export interface PoPdfExportOptions {
 }
 
 /**
- * Ekspor dokumen Permohonan PO Pengadaan Material ke file PDF A4 berkualitas tinggi
+ * Ekspor dokumen PO Material ke file PDF A4 berkualitas tinggi
  */
 export async function exportPoToPdf(
   elementId: string,

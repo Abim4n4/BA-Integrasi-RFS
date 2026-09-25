@@ -51,11 +51,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
   });
   const [statusMsg, setStatusMsg] = useState<{ text: string; isError?: boolean } | null>(null);
 
+  const getAuthHeaders = (extraHeaders: Record<string, string> = {}) => {
+    const token = localStorage.getItem("rfs_session_token");
+    return {
+      ...extraHeaders,
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  };
+
   const fetchUsers = async () => {
     setLoadingUsers(true);
     let loaded = false;
     try {
-      const res = await fetch("/api/admin/users");
+      const res = await fetch("/api/admin/users", {
+        headers: getAuthHeaders()
+      });
       const contentType = res.headers.get("content-type") || "";
       if (res.ok && contentType.includes("application/json")) {
         const data = await res.json();
@@ -109,7 +119,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
     try {
       const res = await fetch("/api/admin/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(createdUser)
       });
       if (res.ok) {
@@ -157,7 +167,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
     try {
       const res = await fetch(`/api/admin/users/${editingUser.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(updatedData)
       });
       if (res.ok) {
@@ -194,7 +204,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser }) => {
     // Delete via backend API
     try {
       const res = await fetch(`/api/admin/users/${deletingUser.id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: getAuthHeaders()
       });
       if (res.ok) {
         await res.json();

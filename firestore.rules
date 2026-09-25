@@ -13,6 +13,13 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated();
     }
 
+    // Rules for PO Material documents
+    match /poMaterial/{docId} {
+      allow read: if true; // Public read for viewing and printing official PO letters
+      allow create: if true; // Allow submission of new PO requests
+      allow update, delete: if isAuthenticated();
+    }
+
     // Rules for Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();

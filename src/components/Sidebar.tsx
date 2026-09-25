@@ -195,11 +195,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </button>
 
-            {/* 3. Permohonan PO Material */}
+            {/* 3. PO Material */}
             <button
               id="tab-btn-po"
               onClick={() => handleNavClick("po")}
-              title="Permohonan PO Pengadaan Material"
+              title="PO Material"
               className={`w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
                 activeTab === "po"
                   ? "surface-elevated text-main font-bold border border-subtle shadow-sm neon-glow"
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <PackageCheck className="w-4 h-4 shrink-0" />
               </div>
               {(!isCollapsed || mobileOpen) && (
-                <span className="truncate flex-1 text-left">Permohonan PO Material</span>
+                <span className="truncate flex-1 text-left">PO Material</span>
               )}
               {(!isCollapsed || mobileOpen) && activeTab === "po" && (
                 <ChevronRight className="w-3.5 h-3.5 accent-color shrink-0 ml-auto" />

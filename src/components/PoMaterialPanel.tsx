@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Printer,
   Download,
@@ -15,12 +15,22 @@ import {
   CheckCircle2,
   RotateCcw,
   Sparkles,
-  Info
+  Info,
+  Save,
+  TableProperties,
+  ArrowRight,
+  Copy
 } from "lucide-react";
 import { PoMaterialItem, PoMaterialRequest, User } from "../types.ts";
 import { FmkaOfficialKop } from "./FmkaHeader.tsx";
 import { DigitalSignaturePad } from "./DigitalSignaturePad.tsx";
 import { exportPoToPdf } from "../utils/poPdfExport.ts";
+import { PoRekapTable } from "./PoRekapTable.tsx";
+import {
+  fetchPoRecordsFromFirestore,
+  savePoRecordToFirestore,
+  deletePoRecordFromFirestore
+} from "../services/firestoreService.ts";
 
 const INDONESIAN_MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -72,6 +82,122 @@ const DEFAULT_ITEMS: PoMaterialItem[] = [
   }
 ];
 
+const INITIAL_PO_RECORDS: PoMaterialRequest[] = [
+  {
+    id: "PO-20260924-001",
+    nomorSurat: "FAMIKA/IX/2026",
+    tanggalSurat: "24 September 2026",
+    lokasiProyek: "Casa Grande Cinere",
+    items: DEFAULT_ITEMS,
+    notes:
+      "Pengadaan material mendesak untuk percepatan implementasi jaringan FTTH & aktivasi pelanggan di area proyek. Mohon diproses dan dikirim ke gudang transit / site sesuai jadwal.",
+    creator1Name: "Ismunandar",
+    creator1Position: "Support Partnership",
+    creator2Name: "Rahadian",
+    creator2Position: "Technical Engineering",
+    approver1Name: "Bayu Pujho",
+    approver1Position: "Project Manager",
+    approver2Name: "Budiharto",
+    approver2Position: "Senior Manager",
+    status: "Disetujui",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "PO-20260920-002",
+    nomorSurat: "FAMIKA/IX/2026/02",
+    tanggalSurat: "20 September 2026",
+    lokasiProyek: "Graha Famika TB Simatupang",
+    items: [
+      {
+        id: "item-201",
+        namaMaterial: "Kabel Feeder Fiber Optic 48 Core G.652D",
+        satuan: "Drum",
+        volume: 1,
+        keterangan: "Kabel backbone utama gedung Graha Famika"
+      },
+      {
+        id: "item-202",
+        namaMaterial: "Optical Termination Box (OTB) 48 Core Rackmount 19 Inch",
+        satuan: "Unit",
+        volume: 2,
+        keterangan: "Terminasi rak server NOC Lantai 3"
+      },
+      {
+        id: "item-203",
+        namaMaterial: "Pigtail SC-UPC 0.9mm 1.5 Meter Single Mode",
+        satuan: "Pcs",
+        volume: 48,
+        keterangan: "Splicing core feeder OTB"
+      },
+      {
+        id: "item-204",
+        namaMaterial: "PLC Splitter Cassette 1:8 SC/UPC",
+        satuan: "Unit",
+        volume: 6,
+        keterangan: "Modul splitter pasif distribusi lantai"
+      }
+    ],
+    notes: "Material upgrade backbone interkoneksi NOC Graha Famika ke Pop TB Simatupang.",
+    creator1Name: "Ismunandar",
+    creator1Position: "Support Partnership",
+    creator2Name: "Rahadian",
+    creator2Position: "Technical Engineering",
+    approver1Name: "Bayu Pujho",
+    approver1Position: "Project Manager",
+    approver2Name: "Budiharto",
+    approver2Position: "Senior Manager",
+    status: "Diproses",
+    createdAt: new Date(Date.now() - 4 * 86400000).toISOString()
+  },
+  {
+    id: "PO-20260915-003",
+    nomorSurat: "FAMIKA/IX/2026/01",
+    tanggalSurat: "15 September 2026",
+    lokasiProyek: "Sentra Distribusi Depok",
+    items: [
+      {
+        id: "item-301",
+        namaMaterial: "Tiang Galvanis Besi Bulat 7 Meter Tebal 3.2mm",
+        satuan: "Batang",
+        volume: 15,
+        keterangan: "Tiang tiang jalur penarikan kabel distribusi jalan protokol"
+      },
+      {
+        id: "item-302",
+        namaMaterial: "Bracket Pole Band Tiang Besi + Baut Mur",
+        satuan: "Set",
+        volume: 30,
+        keterangan: "Aksesoris dudukan suspension & dead-end"
+      },
+      {
+        id: "item-303",
+        namaMaterial: "Span Clamp FO / Tension Clamp Stainless",
+        satuan: "Pcs",
+        volume: 40,
+        keterangan: "Penarik kabel span udara antar tiang"
+      },
+      {
+        id: "item-304",
+        namaMaterial: "Protection Sleeve Sambungan Core 60mm",
+        satuan: "Pcs",
+        volume: 200,
+        keterangan: "Pelindung sambungan fusion splicer"
+      }
+    ],
+    notes: "Pengadaan infrastruktur rute tiang dan aksesoris ekspansi rute Depok Utara.",
+    creator1Name: "Ismunandar",
+    creator1Position: "Support Partnership",
+    creator2Name: "Rahadian",
+    creator2Position: "Technical Engineering",
+    approver1Name: "Bayu Pujho",
+    approver1Position: "Project Manager",
+    approver2Name: "Budiharto",
+    approver2Position: "Senior Manager",
+    status: "Selesai",
+    createdAt: new Date(Date.now() - 9 * 86400000).toISOString()
+  }
+];
+
 const PROJECT_LOCATIONS = [
   "Casa Grande Cinere",
   "Graha Famika TB Simatupang",
@@ -104,7 +230,25 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
   currentUser,
   onShowToast
 }) => {
-  const [viewMode, setViewMode] = useState<"form" | "preview">("preview");
+  // Mode Tampilan: 'rekap' (Tabel Rekapan), 'preview' (Lembar Surat Resmi), 'form' (Input Form)
+  const [viewMode, setViewMode] = useState<"rekap" | "preview" | "form">("rekap");
+
+  // State Rekap Records (Persistent di LocalStorage dan Sync API)
+  const [records, setRecords] = useState<PoMaterialRequest[]>(() => {
+    try {
+      const raw = localStorage.getItem("famika_po_material_records");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return INITIAL_PO_RECORDS;
+  });
+  const [isLoadingRecords, setIsLoadingRecords] = useState(false);
+  const [currentPoId, setCurrentPoId] = useState<string | null>("PO-20260924-001");
+  const [currentStatus, setCurrentStatus] = useState<PoMaterialRequest["status"]>("Disetujui");
+
+  // State Formulir PO Aktif
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().slice(0, 10)
   );
@@ -140,6 +284,43 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
   const [exportProgress, setExportProgress] = useState<string>("");
 
   const printSheetRef = useRef<HTMLDivElement>(null);
+
+  // Fetch dari API Backend & Firestore Cloud saat mount
+  const fetchRecords = async () => {
+    setIsLoadingRecords(true);
+    try {
+      // 1. Prioritize Cloud Firestore for persistent cross-device data
+      try {
+        const cloudRecords = await fetchPoRecordsFromFirestore();
+        if (cloudRecords && cloudRecords.length > 0) {
+          setRecords(cloudRecords);
+          localStorage.setItem("famika_po_material_records", JSON.stringify(cloudRecords));
+          return;
+        }
+      } catch (_cloudErr) {
+        // Continue to server API fallback
+      }
+
+      // 2. Fallback to Node.js backend
+      const res = await fetch("/api/po/list");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setRecords(data.data);
+          localStorage.setItem("famika_po_material_records", JSON.stringify(data.data));
+          return;
+        }
+      }
+    } catch (e) {
+      // Offline fallback already loaded from initial state
+    } finally {
+      setIsLoadingRecords(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecords();
+  }, []);
 
   // Perbarui tanggal dan nomor surat saat tanggal dipilih berubah
   const handleDateChange = (isoDate: string) => {
@@ -214,6 +395,194 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
     handleResetToToday();
   };
 
+  // Simpan Permohonan PO ke Rekap (LocalStorage + Backend)
+  const handleSaveToRekap = async () => {
+    if (!nomorSurat.trim()) {
+      if (onShowToast) onShowToast("Nomor surat wajib diisi.", "error");
+      return;
+    }
+    if (!lokasiProyek.trim()) {
+      if (onShowToast) onShowToast("Lokasi proyek wajib diisi.", "error");
+      return;
+    }
+    if (items.length === 0 || !items.some((it) => it.namaMaterial.trim())) {
+      if (onShowToast) onShowToast("Minimal harus menyertakan 1 nama material.", "error");
+      return;
+    }
+
+    const id = currentPoId || `PO-${Date.now()}`;
+    const nowIso = new Date().toISOString();
+
+    const recordToSave: PoMaterialRequest = {
+      id,
+      nomorSurat,
+      tanggalSurat,
+      lokasiProyek,
+      items: items.filter((it) => it.namaMaterial.trim().length > 0),
+      notes,
+      creator1Name,
+      creator1Position,
+      creator2Name,
+      creator2Position,
+      approver1Name,
+      approver1Position,
+      approver2Name,
+      approver2Position,
+      signatureCreator1: sigCreator1,
+      signatureCreator2: sigCreator2,
+      signatureApprover1: sigApprover1,
+      signatureApprover2: sigApprover2,
+      status: currentStatus || "Diajukan",
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    const exists = records.some((r) => r.id === id);
+    const updated = exists
+      ? records.map((r) => (r.id === id ? recordToSave : r))
+      : [recordToSave, ...records];
+
+    setRecords(updated);
+    localStorage.setItem("famika_po_material_records", JSON.stringify(updated));
+    setCurrentPoId(id);
+
+    try {
+      await fetch("/api/po/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(recordToSave)
+      });
+    } catch (_e) {}
+
+    // Persistent Cloud Firestore Save
+    try {
+      await savePoRecordToFirestore(recordToSave);
+    } catch (_fsErr) {}
+
+    if (onShowToast) {
+      onShowToast(
+        `Permohonan PO "${nomorSurat}" (${lokasiProyek}) berhasil disimpan ke Tabel Rekap!`,
+        "success"
+      );
+    }
+    setViewMode("rekap");
+  };
+
+  // Muat Dokumen ke Formulir atau Pratinjau
+  const loadRecordData = (record: PoMaterialRequest) => {
+    setCurrentPoId(record.id);
+    setNomorSurat(record.nomorSurat);
+    setTanggalSurat(record.tanggalSurat);
+    setLokasiProyek(record.lokasiProyek);
+    setItems(Array.isArray(record.items) && record.items.length > 0 ? record.items : DEFAULT_ITEMS);
+    setNotes(record.notes || "");
+    setCreator1Name(record.creator1Name || "Ismunandar");
+    setCreator1Position(record.creator1Position || "Support Partnership");
+    setCreator2Name(record.creator2Name || "Rahadian");
+    setCreator2Position(record.creator2Position || "Technical Engineering");
+    setApprover1Name(record.approver1Name || "Bayu Pujho");
+    setApprover1Position(record.approver1Position || "Project Manager");
+    setApprover2Name(record.approver2Name || "Budiharto");
+    setApprover2Position(record.approver2Position || "Senior Manager");
+    setSigCreator1(record.signatureCreator1 || "");
+    setSigCreator2(record.signatureCreator2 || "");
+    setSigApprover1(record.signatureApprover1 || "");
+    setSigApprover2(record.signatureApprover2 || "");
+    setCurrentStatus(record.status || "Diajukan");
+  };
+
+  // Buka Pratinjau Lembar Surat Resmi
+  const handleViewDocument = (record: PoMaterialRequest) => {
+    loadRecordData(record);
+    setViewMode("preview");
+    if (onShowToast) {
+      onShowToast(`Membuka lembar surat PO ${record.nomorSurat}`, "success");
+    }
+  };
+
+  // Buka Mode Form Edit
+  const handleEditDocument = (record: PoMaterialRequest) => {
+    loadRecordData(record);
+    setViewMode("form");
+    if (onShowToast) {
+      onShowToast(`Memuat data PO ${record.nomorSurat} ke formulir edit`, "success");
+    }
+  };
+
+  // Duplikasi / Clone PO
+  const handleCloneDocument = (record: PoMaterialRequest) => {
+    loadRecordData(record);
+    setCurrentPoId(null);
+    const newNo = `${record.nomorSurat}-DRAFT`;
+    setNomorSurat(newNo);
+    setSigCreator1("");
+    setSigCreator2("");
+    setSigApprover1("");
+    setSigApprover2("");
+    setCurrentStatus("Diajukan");
+    setViewMode("form");
+    if (onShowToast) {
+      onShowToast(`Dokumen ${record.nomorSurat} siap di-clone sebagai draft baru!`, "success");
+    }
+  };
+
+  // Hapus Dokumen PO
+  const handleDeleteDocument = async (id: string) => {
+    const updated = records.filter((r) => r.id !== id);
+    setRecords(updated);
+    localStorage.setItem("famika_po_material_records", JSON.stringify(updated));
+
+    try {
+      const token = localStorage.getItem("rfs_session_token");
+      await fetch(`/api/po/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+    } catch (_e) {}
+
+    // Persistent Cloud Firestore Delete
+    try {
+      await deletePoRecordFromFirestore(id);
+    } catch (_fsErr) {}
+
+    if (onShowToast) {
+      onShowToast("Dokumen PO berhasil dihapus dari sistem.", "success");
+    }
+  };
+
+  // Buat Pengajuan PO Baru
+  const handleNewPo = () => {
+    setCurrentPoId(null);
+    setCurrentStatus("Diajukan");
+    handleResetDefaults();
+    setViewMode("form");
+    if (onShowToast) {
+      onShowToast("Formulir Permohonan PO baru siap diisi.", "success");
+    }
+  };
+
+  // Ubah Status PO
+  const handleStatusChange = async (id: string, newStatus: PoMaterialRequest["status"]) => {
+    const updated = records.map((r) => (r.id === id ? { ...r, status: newStatus } : r));
+    setRecords(updated);
+    localStorage.setItem("famika_po_material_records", JSON.stringify(updated));
+
+    const targetRecord = updated.find((r) => r.id === id);
+    if (targetRecord) {
+      try {
+        await fetch("/api/po/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(targetRecord)
+        });
+      } catch (_e) {}
+    }
+
+    if (onShowToast) {
+      onShowToast(`Status dokumen berhasil diubah menjadi "${newStatus}".`, "success");
+    }
+  };
+
   // Cetak Dokumen via browser window.print()
   const handlePrint = () => {
     const originalTitle = document.title;
@@ -270,19 +639,40 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
             </span>
             <div>
               <h1 className="text-base sm:text-lg font-bold text-main">
-                Permohonan PO Pengadaan Material
+                PO Material
               </h1>
-              <p className="text-xs text-muted">
-                Formulir resmi Purchase Order (PO) material proyek PT. Fajar Mitra Krida Abadi
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Action Controls & Multi-Mode View Switcher */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* View Mode Toggle */}
+          {/* Main 3-Tab View Mode Switcher */}
           <div className="inline-flex p-1 rounded-xl surface-elevated border text-xs font-semibold">
+            {/* 1. Tabel Rekap PO */}
+            <button
+              onClick={() => setViewMode("rekap")}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === "rekap"
+                  ? "accent-bg text-white shadow-xs"
+                  : "text-muted hover:text-main"
+              }`}
+              title="Tampilkan Tabel Rekapitulasi Hasil Input PO Material"
+            >
+              <TableProperties className="w-3.5 h-3.5" />
+              <span>Tabel Rekap PO</span>
+              <span
+                className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  viewMode === "rekap"
+                    ? "bg-white/25 text-white"
+                    : "surface-muted text-muted"
+                }`}
+              >
+                {records.length}
+              </span>
+            </button>
+
+            {/* 2. Lembar Surat Resmi */}
             <button
               onClick={() => setViewMode("preview")}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -290,11 +680,13 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                   ? "accent-bg text-white shadow-xs"
                   : "text-muted hover:text-main"
               }`}
-              title="Tampilkan Pratinjau Lembar Surat Resmi"
+              title="Tampilkan Pratinjau Lembar Surat Resmi (Cetak / PDF)"
             >
               <Eye className="w-3.5 h-3.5" />
               <span>Lembar Surat</span>
             </button>
+
+            {/* 3. Input Data / Form */}
             <button
               onClick={() => setViewMode("form")}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -305,60 +697,142 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
               title="Edit Form & Input Data Material"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Input Data</span>
+              <span>{currentPoId ? "Edit Form PO" : "Input Form PO"}</span>
             </button>
           </div>
 
-          {/* Reset Defaults */}
-          <button
-            onClick={handleResetDefaults}
-            className="p-2 rounded-xl surface-elevated border text-muted hover:text-main hover:border-slate-400 transition-all text-xs cursor-pointer flex items-center gap-1"
-            title="Muat Ulang Data Bawaan"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset</span>
-          </button>
+          {/* Contextual Action Buttons based on View Mode */}
+          {viewMode === "form" && (
+            <>
+              {/* Tombol Simpan ke Rekap */}
+              <button
+                type="button"
+                onClick={handleSaveToRekap}
+                className="px-3.5 py-2 rounded-xl accent-bg text-white font-bold text-xs hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                title="Simpan Dokumen PO ini ke Tabel Rekap"
+              >
+                <Save className="w-4 h-4" />
+                <span>Simpan ke Rekap</span>
+              </button>
 
-          {/* Print Button */}
-          <button
-            onClick={handlePrint}
-            className="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 surface-elevated text-main font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
-            title="Cetak Surat atau Simpan sebagai PDF via Browser"
-          >
-            <Printer className="w-4 h-4 text-emerald-500" />
-            <span>Cetak / Print</span>
-          </button>
+              <button
+                type="button"
+                onClick={handleResetDefaults}
+                className="p-2 rounded-xl surface-elevated border text-muted hover:text-main hover:border-slate-400 transition-all text-xs cursor-pointer flex items-center gap-1"
+                title="Muat Ulang Data Bawaan"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+            </>
+          )}
 
-          {/* Download PDF Button */}
-          <button
-            onClick={handleDownloadPdf}
-            disabled={isExportingPdf}
-            className="px-4 py-2 rounded-xl accent-bg text-white font-bold text-xs hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
-            title="Download Dokumen PDF Bersih Langsung"
-          >
-            {isExportingPdf ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>{exportProgress || "Membuat PDF..."}</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                <span>Download PDF</span>
-              </>
-            )}
-          </button>
+          {viewMode === "preview" && (
+            <>
+              {/* Tombol Simpan jika ada perubahan */}
+              <button
+                type="button"
+                onClick={handleSaveToRekap}
+                className="px-3 py-2 rounded-xl border border-emerald-500/40 surface-elevated text-emerald-500 font-semibold text-xs hover:bg-emerald-500/10 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Simpan Dokumen PO Saat Ini"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Simpan Dokumen</span>
+              </button>
+
+              {/* Print Button */}
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 surface-elevated text-main font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+                title="Cetak Surat atau Simpan sebagai PDF via Browser"
+              >
+                <Printer className="w-4 h-4 text-emerald-500" />
+                <span>Cetak / Print</span>
+              </button>
+
+              {/* Download PDF Button */}
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isExportingPdf}
+                className="px-4 py-2 rounded-xl accent-bg text-white font-bold text-xs hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+                title="Download Dokumen PDF Bersih Langsung"
+              >
+                {isExportingPdf ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>{exportProgress || "Membuat PDF..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span>Download PDF</span>
+                  </>
+                )}
+              </button>
+            </>
+          )}
+
+          {viewMode === "rekap" && (
+            <button
+              type="button"
+              onClick={handleNewPo}
+              className="px-3.5 py-2 rounded-xl accent-bg text-white font-bold text-xs hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="Buat Pengajuan Permohonan PO Baru"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Buat PO Baru</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Mode Form Input Data (Dapat diedit dengan mudah oleh pengguna) */}
+      {/* VIEW 1: TABEL REKAP PO (HASIL INPUT PERMOHONAN PO MATERIAL) */}
+      {viewMode === "rekap" && (
+        <PoRekapTable
+          records={records}
+          currentUser={currentUser}
+          isLoading={isLoadingRecords}
+          onRefresh={fetchRecords}
+          onViewDocument={handleViewDocument}
+          onEditDocument={handleEditDocument}
+          onCloneDocument={handleCloneDocument}
+          onDeleteDocument={handleDeleteDocument}
+          onNewPo={handleNewPo}
+          onStatusChange={handleStatusChange}
+          onShowToast={onShowToast}
+        />
+      )}
+
+      {/* VIEW 2: FORMULIR INPUT DATA PO */}
       {viewMode === "form" && (
         <div className="space-y-6 no-print">
+          {/* Status banner jika sedang mengedit dokumen yang sudah ada */}
+          {currentPoId && (
+            <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-between text-xs text-main">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>
+                  Mengedit dokumen PO: <strong className="font-mono">{nomorSurat}</strong> (
+                  {lokasiProyek})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleNewPo}
+                className="text-[11px] text-emerald-500 hover:underline font-bold cursor-pointer"
+              >
+                + Beralih ke Form PO Baru
+              </button>
+            </div>
+          )}
+
           {/* Bagian 1: Header Dokumen & Lokasi */}
           <div className="surface-card border rounded-2xl p-5 shadow-xs space-y-4">
             <h2 className="text-sm font-bold text-main flex items-center gap-2 border-b pb-2.5">
               <Building2 className="w-4 h-4 text-emerald-500" />
-              <span>1. Nomor Dokumen, Tanggal & Lokasi Proyek</span>
+              <span>1. Nomor Dokumen, Tanggal &amp; Lokasi Proyek</span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -547,8 +1021,13 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
 
             {/* Total Summary */}
             <div className="flex flex-wrap items-center justify-between text-xs text-muted pt-1 px-1">
-              <span>Total Item: <strong className="text-main">{items.length} macam</strong></span>
-              <span>Akumulasi Volume: <strong className="text-emerald-500">{totalVolume}</strong> unit/satuan</span>
+              <span>
+                Total Item: <strong className="text-main">{items.length} macam</strong>
+              </span>
+              <span>
+                Akumulasi Volume:{" "}
+                <strong className="text-emerald-500">{totalVolume}</strong> unit/satuan
+              </span>
             </div>
 
             {/* Kolom Catatan (Note) Tambahan */}
@@ -584,7 +1063,9 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                 {/* Pembuat 1 */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Nama Pembuat 1</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      Nama Pembuat 1
+                    </label>
                     <input
                       type="text"
                       value={creator1Name}
@@ -593,7 +1074,9 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Jabatan 1</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      Jabatan 1
+                    </label>
                     <input
                       type="text"
                       value={creator1Position}
@@ -606,7 +1089,9 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                 {/* Pembuat 2 */}
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-subtle">
                   <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Nama Pembuat 2</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      Nama Pembuat 2
+                    </label>
                     <input
                       type="text"
                       value={creator2Name}
@@ -615,7 +1100,9 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Jabatan 2</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      Jabatan 2
+                    </label>
                     <input
                       type="text"
                       value={creator2Position}
@@ -636,7 +1123,9 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                 {/* Menyetujui 1 */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Nama Penyetuju 1</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      Nama Penyetuju 1
+                    </label>
                     <input
                       type="text"
                       value={approver1Name}
@@ -645,7 +1134,9 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Jabatan 1</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      Jabatan 1
+                    </label>
                     <input
                       type="text"
                       value={approver1Position}
@@ -658,7 +1149,9 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                 {/* Menyetujui 2 */}
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-subtle">
                   <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Nama Penyetuju 2</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      Nama Penyetuju 2
+                    </label>
                     <input
                       type="text"
                       value={approver2Name}
@@ -667,7 +1160,9 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Jabatan 2</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      Jabatan 2
+                    </label>
                     <input
                       type="text"
                       value={approver2Position}
@@ -679,282 +1174,334 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Bottom Form Action Banner */}
+          <div className="surface-card border rounded-2xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xs text-muted">
+              <span>Pastikan seluruh data dan kebutuhan volume material telah sesuai sebelum disimpan.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setViewMode("preview")}
+                className="px-3.5 py-2 rounded-xl border surface-elevated text-main font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Lihat Lembar Surat</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("rekap")}
+                className="px-3.5 py-2 rounded-xl border surface-elevated text-main font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <TableProperties className="w-3.5 h-3.5" />
+                <span>Lihat Tabel Rekap</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveToRekap}
+                className="px-5 py-2.5 rounded-xl accent-bg text-white font-bold text-xs hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+                <span>Simpan ke Tabel Rekapitulasi</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Mode Pratinjau Dokumen Resmi (Live Document Preview) & Kertas Cetak A4 */}
-      <div className="flex justify-center w-full">
-        {/* Kontainer Lembar A4 Cetak Resmi */}
-        <div
-          id="po-official-document-sheet"
-          ref={printSheetRef}
-          className="w-full max-w-[850px] bg-white text-slate-900 border border-slate-300 shadow-xl rounded-sm p-6 sm:p-10 transition-all font-sans print:p-0 print:border-none print:shadow-none print:max-w-none print:w-full print:bg-white"
-          style={{ minHeight: "1050px" }}
-        >
-          {/* 1. Kop Surat Resmi FMKA */}
-          <FmkaOfficialKop showPurpleBanner={true} className="mb-4" />
+      {/* VIEW 3: LEMBAR SURAT RESMI (PREVIEW & CETAK A4) */}
+      {viewMode === "preview" && (
+        <div className="flex justify-center w-full">
+          {/* Kontainer Lembar A4 Cetak Resmi */}
+          <div
+            id="po-official-document-sheet"
+            ref={printSheetRef}
+            className="w-full max-w-[850px] bg-white text-slate-900 border border-slate-300 shadow-xl rounded-sm p-6 sm:p-10 transition-all font-sans print:p-0 print:border-none print:shadow-none print:max-w-none print:w-full print:bg-white"
+            style={{ minHeight: "1050px" }}
+          >
+            {/* 1. Kop Surat Resmi FMKA */}
+            <FmkaOfficialKop showPurpleBanner={true} className="mb-4" />
 
-          {/* 2. Judul Dokumen Surat */}
-          <div className="text-center my-5">
-            <h2 className="text-base sm:text-lg font-black uppercase tracking-wide text-[#0f2858] underline decoration-2 underline-offset-4">
-              SURAT PERMOHONAN PURCHASE ORDER (PO)
-            </h2>
-            <p className="text-xs sm:text-sm font-bold text-slate-800 tracking-wider mt-1 uppercase">
-              PENGADAAN MATERIAL PROYEK
-            </p>
-          </div>
+            {/* 2. Judul Dokumen Surat */}
+            <div className="text-center my-5">
+              <h2 className="text-base sm:text-lg font-black uppercase tracking-wide text-[#0f2858] underline decoration-2 underline-offset-4">
+                SURAT PERMOHONAN PURCHASE ORDER (PO)
+              </h2>
+              <p className="text-xs sm:text-sm font-bold text-slate-800 tracking-wider mt-1 uppercase">
+                PENGADAAN MATERIAL PROYEK
+              </p>
+            </div>
 
-          {/* 3. Metadata Surat: No Surat, Tanggal & Lokasi Proyek */}
-          <div className="border border-slate-800 rounded-sm mb-5 p-3 sm:p-4 bg-slate-50/70 text-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-              <div className="space-y-1.5">
-                <div className="flex items-start">
-                  <span className="w-28 sm:w-32 font-bold text-slate-700 shrink-0">Nomor Surat</span>
-                  <span className="mr-2 font-bold">:</span>
-                  <span className="font-mono font-bold text-slate-950">{nomorSurat}</span>
+            {/* 3. Metadata Surat: No Surat, Tanggal & Lokasi Proyek */}
+            <div className="border border-slate-800 rounded-sm mb-5 p-3 sm:p-4 bg-slate-50/70 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-start">
+                    <span className="w-28 sm:w-32 font-bold text-slate-700 shrink-0">
+                      Nomor Surat
+                    </span>
+                    <span className="mr-2 font-bold">:</span>
+                    <span className="font-mono font-bold text-slate-950">{nomorSurat}</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="w-28 sm:w-32 font-bold text-slate-700 shrink-0">
+                      Tanggal Pengajuan
+                    </span>
+                    <span className="mr-2 font-bold">:</span>
+                    <span className="font-semibold text-slate-900">{tanggalSurat}</span>
+                  </div>
                 </div>
-                <div className="flex items-start">
-                  <span className="w-28 sm:w-32 font-bold text-slate-700 shrink-0">Tanggal Pengajuan</span>
-                  <span className="mr-2 font-bold">:</span>
-                  <span className="font-semibold text-slate-900">{tanggalSurat}</span>
-                </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <div className="flex items-start">
-                  <span className="w-28 sm:w-32 font-bold text-slate-700 shrink-0">Lokasi Proyek</span>
-                  <span className="mr-2 font-bold">:</span>
-                  <span className="font-bold text-slate-950 uppercase">{lokasiProyek}</span>
-                </div>
-                <div className="flex items-start">
-                  <span className="w-28 sm:w-32 font-bold text-slate-700 shrink-0">Perusahaan</span>
-                  <span className="mr-2 font-bold">:</span>
-                  <span className="font-semibold text-slate-900">PT. Fajar Mitra Krida Abadi</span>
+                <div className="space-y-1.5">
+                  <div className="flex items-start">
+                    <span className="w-28 sm:w-32 font-bold text-slate-700 shrink-0">
+                      Lokasi Proyek
+                    </span>
+                    <span className="mr-2 font-bold">:</span>
+                    <span className="font-bold text-slate-950 uppercase">{lokasiProyek}</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="w-28 sm:w-32 font-bold text-slate-700 shrink-0">
+                      Perusahaan
+                    </span>
+                    <span className="mr-2 font-bold">:</span>
+                    <span className="font-semibold text-slate-900">
+                      PT. Fajar Mitra Krida Abadi
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* 4. Tabel Rincian Material */}
-          <div className="mb-5">
-            <p className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wide">
-              A. Daftar Kebutuhan Material:
-            </p>
-            <table className="w-full text-left text-xs border-collapse border border-slate-800">
-              <thead>
-                <tr className="bg-slate-200/90 text-slate-950 border-b border-slate-800 font-bold">
-                  <th className="border border-slate-800 p-2 w-10 text-center">NO</th>
-                  <th className="border border-slate-800 p-2 min-w-[200px]">NAMA MATERIAL / DESKRIPSI</th>
-                  <th className="border border-slate-800 p-2 w-28 text-center">SATUAN</th>
-                  <th className="border border-slate-800 p-2 w-24 text-center">VOLUME</th>
-                  <th className="border border-slate-800 p-2">KETERANGAN / SPESIFIKASI</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <tr key={item.id} className="even:bg-slate-50/50">
-                    <td className="border border-slate-800 p-2 text-center font-bold text-slate-800">
-                      {index + 1}
+            {/* 4. Tabel Rincian Material */}
+            <div className="mb-5">
+              <p className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wide">
+                A. Daftar Kebutuhan Material:
+              </p>
+              <table className="w-full text-left text-xs border-collapse border border-slate-800">
+                <thead>
+                  <tr className="bg-slate-200/90 text-slate-950 border-b border-slate-800 font-bold">
+                    <th className="border border-slate-800 p-2 w-10 text-center">NO</th>
+                    <th className="border border-slate-800 p-2 min-w-[200px]">
+                      NAMA MATERIAL / DESKRIPSI
+                    </th>
+                    <th className="border border-slate-800 p-2 w-28 text-center">SATUAN</th>
+                    <th className="border border-slate-800 p-2 w-24 text-center">VOLUME</th>
+                    <th className="border border-slate-800 p-2">KETERANGAN / SPESIFIKASI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr key={item.id} className="even:bg-slate-50/50">
+                      <td className="border border-slate-800 p-2 text-center font-bold text-slate-800">
+                        {index + 1}
+                      </td>
+                      <td className="border border-slate-800 p-2 font-semibold text-slate-900">
+                        {item.namaMaterial || "-"}
+                      </td>
+                      <td className="border border-slate-800 p-2 text-center text-slate-800">
+                        {item.satuan || "-"}
+                      </td>
+                      <td className="border border-slate-800 p-2 text-center font-bold text-slate-950">
+                        {item.volume}
+                      </td>
+                      <td className="border border-slate-800 p-2 text-slate-700 text-[11px]">
+                        {item.keterangan || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-slate-100 font-bold text-slate-900 border-t border-slate-800">
+                    <td
+                      colSpan={3}
+                      className="border border-slate-800 p-2 text-right uppercase tracking-wider"
+                    >
+                      Total Kuantitas:
                     </td>
-                    <td className="border border-slate-800 p-2 font-semibold text-slate-900">
-                      {item.namaMaterial || "-"}
+                    <td className="border border-slate-800 p-2 text-center text-slate-950">
+                      {totalVolume}
                     </td>
-                    <td className="border border-slate-800 p-2 text-center text-slate-800">
-                      {item.satuan || "-"}
-                    </td>
-                    <td className="border border-slate-800 p-2 text-center font-bold text-slate-950">
-                      {item.volume}
-                    </td>
-                    <td className="border border-slate-800 p-2 text-slate-700 text-[11px]">
-                      {item.keterangan || "-"}
+                    <td className="border border-slate-800 p-2 text-[11px] text-slate-600">
+                      {items.length} macam item material
                     </td>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-slate-100 font-bold text-slate-900 border-t border-slate-800">
-                  <td colSpan={3} className="border border-slate-800 p-2 text-right uppercase tracking-wider">
-                    Total Kuantitas:
-                  </td>
-                  <td className="border border-slate-800 p-2 text-center text-slate-950">
-                    {totalVolume}
-                  </td>
-                  <td className="border border-slate-800 p-2 text-[11px] text-slate-600">
-                    {items.length} macam item material
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* 5. Catatan Tambahan (Note) */}
-          <div className="mb-6 p-3 border border-slate-800 rounded-sm bg-slate-50/60 text-xs">
-            <p className="font-bold text-slate-900 uppercase mb-1">Catatan (Note):</p>
-            <p className="text-slate-800 leading-relaxed italic whitespace-pre-wrap">
-              {notes || "Tidak ada catatan khusus."}
-            </p>
-          </div>
-
-          {/* 6. Matriks 4 Kolom Tanda Tangan Pengesahan Resmi */}
-          <div className="mt-8 pt-2 print:mt-4">
-            <p className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wide">
-              B. Pengesahan &amp; Persetujuan Dokumen:
-            </p>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Grup Kiri: Pembuat (Diajukan Oleh) */}
-              <div className="border border-slate-800 rounded-sm p-3 bg-white">
-                <p className="text-[11px] font-bold text-center uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-1 mb-2">
-                  Diajukan Oleh (Pembuat)
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Pembuat 1: Ismunandar */}
-                  <div className="text-center flex flex-col justify-between h-36">
-                    <p className="text-[10.5px] font-semibold text-slate-700">Support Partnership</p>
-                    <div className="flex-1 flex items-center justify-center my-1 relative group">
-                      {sigCreator1 ? (
-                        <img
-                          src={sigCreator1}
-                          alt="Tanda Tangan Ismunandar"
-                          className="max-h-16 max-w-full object-contain"
-                        />
-                      ) : (
-                        <div className="text-[10px] text-slate-400 italic border border-dashed border-slate-300 rounded px-2 py-1 select-none">
-                          [Tanda Tangan]
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setActiveSigPad("creator1")}
-                        className="no-print absolute inset-0 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded cursor-pointer"
-                        title="Bubuhkan Tanda Tangan Digital"
-                      >
-                        <PenTool className="w-3 h-3 mr-1" /> Tanda Tangan
-                      </button>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-950 underline underline-offset-2">
-                        {creator1Name}
-                      </p>
-                      <p className="text-[10px] text-slate-600">{creator1Position}</p>
-                    </div>
-                  </div>
-
-                  {/* Pembuat 2: Rahadian */}
-                  <div className="text-center flex flex-col justify-between h-36 border-l border-slate-200 pl-2">
-                    <p className="text-[10.5px] font-semibold text-slate-700">Technical Engineering</p>
-                    <div className="flex-1 flex items-center justify-center my-1 relative group">
-                      {sigCreator2 ? (
-                        <img
-                          src={sigCreator2}
-                          alt="Tanda Tangan Rahadian"
-                          className="max-h-16 max-w-full object-contain"
-                        />
-                      ) : (
-                        <div className="text-[10px] text-slate-400 italic border border-dashed border-slate-300 rounded px-2 py-1 select-none">
-                          [Tanda Tangan]
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setActiveSigPad("creator2")}
-                        className="no-print absolute inset-0 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded cursor-pointer"
-                        title="Bubuhkan Tanda Tangan Digital"
-                      >
-                        <PenTool className="w-3 h-3 mr-1" /> Tanda Tangan
-                      </button>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-950 underline underline-offset-2">
-                        {creator2Name}
-                      </p>
-                      <p className="text-[10px] text-slate-600">{creator2Position}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Grup Kanan: Menyetujui */}
-              <div className="border border-slate-800 rounded-sm p-3 bg-white">
-                <p className="text-[11px] font-bold text-center uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-1 mb-2">
-                  Mengetahui &amp; Menyetujui
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Menyetujui 1: Bayu Pujho */}
-                  <div className="text-center flex flex-col justify-between h-36">
-                    <p className="text-[10.5px] font-semibold text-slate-700">Project Manager</p>
-                    <div className="flex-1 flex items-center justify-center my-1 relative group">
-                      {sigApprover1 ? (
-                        <img
-                          src={sigApprover1}
-                          alt="Tanda Tangan Bayu Pujho"
-                          className="max-h-16 max-w-full object-contain"
-                        />
-                      ) : (
-                        <div className="text-[10px] text-slate-400 italic border border-dashed border-slate-300 rounded px-2 py-1 select-none">
-                          [Tanda Tangan]
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setActiveSigPad("approver1")}
-                        className="no-print absolute inset-0 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded cursor-pointer"
-                        title="Bubuhkan Tanda Tangan Digital"
-                      >
-                        <PenTool className="w-3 h-3 mr-1" /> Tanda Tangan
-                      </button>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-950 underline underline-offset-2">
-                        {approver1Name}
-                      </p>
-                      <p className="text-[10px] text-slate-600">{approver1Position}</p>
-                    </div>
-                  </div>
-
-                  {/* Menyetujui 2: Budiharto */}
-                  <div className="text-center flex flex-col justify-between h-36 border-l border-slate-200 pl-2">
-                    <p className="text-[10.5px] font-semibold text-slate-700">Senior Manager</p>
-                    <div className="flex-1 flex items-center justify-center my-1 relative group">
-                      {sigApprover2 ? (
-                        <img
-                          src={sigApprover2}
-                          alt="Tanda Tangan Budiharto"
-                          className="max-h-16 max-w-full object-contain"
-                        />
-                      ) : (
-                        <div className="text-[10px] text-slate-400 italic border border-dashed border-slate-300 rounded px-2 py-1 select-none">
-                          [Tanda Tangan]
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setActiveSigPad("approver2")}
-                        className="no-print absolute inset-0 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded cursor-pointer"
-                        title="Bubuhkan Tanda Tangan Digital"
-                      >
-                        <PenTool className="w-3 h-3 mr-1" /> Tanda Tangan
-                      </button>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-950 underline underline-offset-2">
-                        {approver2Name}
-                      </p>
-                      <p className="text-[10px] text-slate-600">{approver2Position}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </tfoot>
+              </table>
             </div>
 
-            {/* Footer Dokumen */}
-            <div className="mt-8 pt-3 border-t border-slate-400 text-[10px] text-slate-500 flex items-center justify-between">
-              <span>PT. FAJAR MITRA KRIDA ABADI • Divisi Pengadaan &amp; Proyek Jaringan</span>
-              <span>Dokumen Resmi • PO Material</span>
+            {/* 5. Catatan Tambahan (Note) */}
+            <div className="mb-6 p-3 border border-slate-800 rounded-sm bg-slate-50/60 text-xs">
+              <p className="font-bold text-slate-900 uppercase mb-1">Catatan (Note):</p>
+              <p className="text-slate-800 leading-relaxed italic whitespace-pre-wrap">
+                {notes || "Tidak ada catatan khusus."}
+              </p>
+            </div>
+
+            {/* 6. Matriks 4 Kolom Tanda Tangan Pengesahan Resmi */}
+            <div className="mt-8 pt-2 print:mt-4">
+              <p className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wide">
+                B. Pengesahan &amp; Persetujuan Dokumen:
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Grup Kiri: Pembuat (Diajukan Oleh) */}
+                <div className="border border-slate-800 rounded-sm p-3 bg-white">
+                  <p className="text-[11px] font-bold text-center uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-1 mb-2">
+                    Diajukan Oleh (Pembuat)
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Pembuat 1: Ismunandar */}
+                    <div className="text-center flex flex-col justify-between h-36">
+                      <p className="text-[10.5px] font-semibold text-slate-700">Support Partnership</p>
+                      <div className="flex-1 flex items-center justify-center my-1 relative group">
+                        {sigCreator1 ? (
+                          <img
+                            src={sigCreator1}
+                            alt="Tanda Tangan Ismunandar"
+                            className="max-h-16 max-w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-[10px] text-slate-400 italic border border-dashed border-slate-300 rounded px-2 py-1 select-none">
+                            [Tanda Tangan]
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveSigPad("creator1")}
+                          className="no-print absolute inset-0 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded cursor-pointer"
+                          title="Bubuhkan Tanda Tangan Digital"
+                        >
+                          <PenTool className="w-3 h-3 mr-1" /> Tanda Tangan
+                        </button>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-950 underline underline-offset-2">
+                          {creator1Name}
+                        </p>
+                        <p className="text-[10px] text-slate-600">{creator1Position}</p>
+                      </div>
+                    </div>
+
+                    {/* Pembuat 2: Rahadian */}
+                    <div className="text-center flex flex-col justify-between h-36 border-l border-slate-200 pl-2">
+                      <p className="text-[10.5px] font-semibold text-slate-700">
+                        Technical Engineering
+                      </p>
+                      <div className="flex-1 flex items-center justify-center my-1 relative group">
+                        {sigCreator2 ? (
+                          <img
+                            src={sigCreator2}
+                            alt="Tanda Tangan Rahadian"
+                            className="max-h-16 max-w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-[10px] text-slate-400 italic border border-dashed border-slate-300 rounded px-2 py-1 select-none">
+                            [Tanda Tangan]
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveSigPad("creator2")}
+                          className="no-print absolute inset-0 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded cursor-pointer"
+                          title="Bubuhkan Tanda Tangan Digital"
+                        >
+                          <PenTool className="w-3 h-3 mr-1" /> Tanda Tangan
+                        </button>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-950 underline underline-offset-2">
+                          {creator2Name}
+                        </p>
+                        <p className="text-[10px] text-slate-600">{creator2Position}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grup Kanan: Menyetujui */}
+                <div className="border border-slate-800 rounded-sm p-3 bg-white">
+                  <p className="text-[11px] font-bold text-center uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-1 mb-2">
+                    Mengetahui &amp; Menyetujui
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Menyetujui 1: Bayu Pujho */}
+                    <div className="text-center flex flex-col justify-between h-36">
+                      <p className="text-[10.5px] font-semibold text-slate-700">Project Manager</p>
+                      <div className="flex-1 flex items-center justify-center my-1 relative group">
+                        {sigApprover1 ? (
+                          <img
+                            src={sigApprover1}
+                            alt="Tanda Tangan Bayu Pujho"
+                            className="max-h-16 max-w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-[10px] text-slate-400 italic border border-dashed border-slate-300 rounded px-2 py-1 select-none">
+                            [Tanda Tangan]
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveSigPad("approver1")}
+                          className="no-print absolute inset-0 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded cursor-pointer"
+                          title="Bubuhkan Tanda Tangan Digital"
+                        >
+                          <PenTool className="w-3 h-3 mr-1" /> Tanda Tangan
+                        </button>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-950 underline underline-offset-2">
+                          {approver1Name}
+                        </p>
+                        <p className="text-[10px] text-slate-600">{approver1Position}</p>
+                      </div>
+                    </div>
+
+                    {/* Menyetujui 2: Budiharto */}
+                    <div className="text-center flex flex-col justify-between h-36 border-l border-slate-200 pl-2">
+                      <p className="text-[10.5px] font-semibold text-slate-700">Senior Manager</p>
+                      <div className="flex-1 flex items-center justify-center my-1 relative group">
+                        {sigApprover2 ? (
+                          <img
+                            src={sigApprover2}
+                            alt="Tanda Tangan Budiharto"
+                            className="max-h-16 max-w-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-[10px] text-slate-400 italic border border-dashed border-slate-300 rounded px-2 py-1 select-none">
+                            [Tanda Tangan]
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveSigPad("approver2")}
+                          className="no-print absolute inset-0 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-bold transition-opacity rounded cursor-pointer"
+                          title="Bubuhkan Tanda Tangan Digital"
+                        >
+                          <PenTool className="w-3 h-3 mr-1" /> Tanda Tangan
+                        </button>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-950 underline underline-offset-2">
+                          {approver2Name}
+                        </p>
+                        <p className="text-[10px] text-slate-600">{approver2Position}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Dokumen */}
+              <div className="mt-8 pt-3 border-t border-slate-400 text-[10px] text-slate-500 flex items-center justify-between">
+                <span>PT. FAJAR MITRA KRIDA ABADI • Divisi Pengadaan &amp; Proyek Jaringan</span>
+                <span>Dokumen Resmi • PO Material</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Modal Digital Signature Pad jika pengguna ingin membubuhkan tanda tangan */}
       {activeSigPad && (

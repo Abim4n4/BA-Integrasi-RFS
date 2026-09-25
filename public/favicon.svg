@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="fiberGrad" x1="16" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Shield / Icon Shape -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" />
+  <rect x="1.5" y="1.5" width="61" height="61" rx="14.5" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="2" />
+  
+  <!-- Network Fiber Ring & Nodes -->
+  <circle cx="32" cy="32" r="20" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="3 3" opacity="0.6" />
+  
+  <!-- Stylized F / Integration Symbol -->
+  <path d="M22 46V18H42C43.6569 18 45 19.3431 45 21C45 22.6569 43.6569 24 42 24H28V30H38C39.6569 30 41 31.3431 41 33C41 34.6569 39.6569 36 38 36H28V46H22Z" fill="#ffffff" />
+  
+  <!-- Connection Pulse Node -->
+  <circle cx="44" cy="42" r="4" fill="#38bdf8" />
+  <circle cx="44" cy="42" r="2" fill="#ffffff" />
+</svg>

@@ -39,6 +39,24 @@
       },
       "required": ["noBa", "tanggal", "waktu", "isp", "locationName", "status"]
     },
+    "PoMaterial": {
+      "title": "PoMaterial",
+      "description": "Dokumen Permohonan Purchase Order (PO) Pengadaan Material Proyek",
+      "type": "object",
+      "properties": {
+        "nomorSurat": { "type": "string", "description": "Nomor Surat PO" },
+        "tanggalSurat": { "type": "string", "description": "Tanggal Surat PO" },
+        "lokasiProyek": { "type": "string", "description": "Lokasi Proyek Pengadaan" },
+        "notes": { "type": "string", "description": "Catatan Tambahan PO" },
+        "status": { "type": "string", "description": "Status Pengajuan PO" },
+        "creator1Name": { "type": "string", "description": "Nama Pembuat 1" },
+        "creator2Name": { "type": "string", "description": "Nama Pembuat 2" },
+        "approver1Name": { "type": "string", "description": "Nama Penyetuju 1" },
+        "approver2Name": { "type": "string", "description": "Nama Penyetuju 2" },
+        "createdAt": { "type": "string", "description": "Waktu Pembuatan" }
+      },
+      "required": ["nomorSurat", "tanggalSurat", "lokasiProyek", "status"]
+    },
     "UserProfile": {
       "title": "UserProfile",
       "description": "Profil pengguna dan peran otorisasi sistem",
@@ -56,6 +74,10 @@
     "/beritaAcara/{docId}": {
       "schema": { "$ref": "#/entities/BeritaAcara" },
       "description": "Koleksi Berita Acara Ready For Service (BA-RFS)"
+    },
+    "/poMaterial/{docId}": {
+      "schema": { "$ref": "#/entities/PoMaterial" },
+      "description": "Koleksi Permohonan PO Pengadaan Material Proyek"
     },
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
