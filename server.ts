@@ -958,7 +958,7 @@ interface PoMaterialRecord {
 let poRecordsStore: PoMaterialRecord[] = [
   {
     id: "PO-20260924-001",
-    nomorSurat: "FAMIKA/IX/2026",
+    nomorSurat: "001/PO-MAT/FAMIKA/IX/2026",
     tanggalSurat: "24 September 2026",
     lokasiProyek: "Casa Grande Cinere",
     items: [
@@ -1005,7 +1005,7 @@ let poRecordsStore: PoMaterialRecord[] = [
   },
   {
     id: "PO-20260920-002",
-    nomorSurat: "FAMIKA/IX/2026/02",
+    nomorSurat: "002/PO-MAT/FAMIKA/IX/2026",
     tanggalSurat: "20 September 2026",
     lokasiProyek: "Graha Famika TB Simatupang",
     items: [
@@ -1052,7 +1052,7 @@ let poRecordsStore: PoMaterialRecord[] = [
   },
   {
     id: "PO-20260915-003",
-    nomorSurat: "FAMIKA/IX/2026/01",
+    nomorSurat: "003/PO-MAT/FAMIKA/IX/2026",
     tanggalSurat: "15 September 2026",
     lokasiProyek: "Sentra Distribusi Depok",
     items: [

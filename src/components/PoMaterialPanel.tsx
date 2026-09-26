@@ -45,10 +45,66 @@ export const formatLiveIndonesianDate = (d = new Date()): string => {
   return `${d.getDate()} ${INDONESIAN_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-export const generateLivePoNumber = (d = new Date()): string => {
-  const roman = ROMAN_MONTHS[d.getMonth()];
+export type PoNumberFormat = "PO-MAT" | "SPM-FO" | "PO-DATE" | "PO-OPS";
+
+export const getNextPoSequence = (recordsList: PoMaterialRequest[] = [], d = new Date()): number => {
+  let maxSeq = 0;
+  recordsList.forEach((r) => {
+    if (!r.nomorSurat) return;
+    const str = r.nomorSurat.trim();
+
+    // 1. Check leading sequence, e.g. "001/PO-MAT/FAMIKA/IX/2026" or "025/..."
+    const matchPrefix = str.match(/^(\d+)\//);
+    if (matchPrefix) {
+      const num = parseInt(matchPrefix[1], 10);
+      // Ignore contaminated years (> 1900)
+      if (!isNaN(num) && num < 1900 && num > maxSeq) {
+        maxSeq = num;
+        return;
+      }
+    }
+
+    // 2. Check trailing sequence, e.g. "PO-MAT/20260925/001" or "FAMIKA/IX/2026/02"
+    const matchSuffix = str.match(/[\/-](\d+)$/);
+    if (matchSuffix) {
+      const num = parseInt(matchSuffix[1], 10);
+      // Strictly avoid 4-digit years like 2024, 2025, 2026, 2027
+      if (!isNaN(num) && num < 1900 && num > maxSeq) {
+        maxSeq = num;
+      }
+    }
+  });
+
+  return maxSeq > 0 ? maxSeq + 1 : Math.max(1, recordsList.length + 1);
+};
+
+export const generateLivePoNumber = (
+  d = new Date(),
+  sequence = 1,
+  format: PoNumberFormat = "PO-MAT"
+): string => {
+  const roman = ROMAN_MONTHS[d.getMonth()] || "IX";
   const year = d.getFullYear();
-  return `FAMIKA/${roman}/${year}`;
+  const seqStr = String(sequence).padStart(3, "0");
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+
+  switch (format) {
+    case "SPM-FO":
+      // Surat Pengajuan Material Fiber Optic
+      return `${seqStr}/SPM-FO/FAMIKA/${roman}/${year}`;
+    case "PO-DATE":
+      // Format serial ISO berbasis tanggal: PO-MAT/YYYYMMDD/001
+      return `PO-MAT/${yyyy}${mm}${dd}/${seqStr}`;
+    case "PO-OPS":
+      // Pengadaan Operasional Lapangan
+      return `${seqStr}/PO-OPS/FAMIKA/${roman}/${year}`;
+    case "PO-MAT":
+    default:
+      // Standar Resmi Purchase Order Pengadaan Material
+      return `${seqStr}/PO-MAT/FAMIKA/${roman}/${year}`;
+  }
 };
 
 const DEFAULT_ITEMS: PoMaterialItem[] = [
@@ -85,7 +141,7 @@ const DEFAULT_ITEMS: PoMaterialItem[] = [
 const INITIAL_PO_RECORDS: PoMaterialRequest[] = [
   {
     id: "PO-20260924-001",
-    nomorSurat: "FAMIKA/IX/2026",
+    nomorSurat: "001/PO-MAT/FAMIKA/IX/2026",
     tanggalSurat: "24 September 2026",
     lokasiProyek: "Casa Grande Cinere",
     items: DEFAULT_ITEMS,
@@ -104,7 +160,7 @@ const INITIAL_PO_RECORDS: PoMaterialRequest[] = [
   },
   {
     id: "PO-20260920-002",
-    nomorSurat: "FAMIKA/IX/2026/02",
+    nomorSurat: "002/PO-MAT/FAMIKA/IX/2026",
     tanggalSurat: "20 September 2026",
     lokasiProyek: "Graha Famika TB Simatupang",
     items: [
@@ -151,7 +207,7 @@ const INITIAL_PO_RECORDS: PoMaterialRequest[] = [
   },
   {
     id: "PO-20260915-003",
-    nomorSurat: "FAMIKA/IX/2026/01",
+    nomorSurat: "003/PO-MAT/FAMIKA/IX/2026",
     tanggalSurat: "15 September 2026",
     lokasiProyek: "Sentra Distribusi Depok",
     items: [
@@ -253,8 +309,20 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
     new Date().toISOString().slice(0, 10)
   );
   const [tanggalSurat, setTanggalSurat] = useState<string>(formatLiveIndonesianDate());
-  const [nomorSurat, setNomorSurat] = useState<string>(generateLivePoNumber());
+  const [poFormat, setPoFormat] = useState<PoNumberFormat>("PO-MAT");
+  const [nomorSurat, setNomorSurat] = useState<string>(() => {
+    return generateLivePoNumber(new Date(), 4, "PO-MAT");
+  });
   const [lokasiProyek, setLokasiProyek] = useState<string>("Casa Grande Cinere");
+
+  // Auto-correct any contaminated 2027 sequence from previous bug
+  useEffect(() => {
+    if (nomorSurat && /^202\d\//.test(nomorSurat)) {
+      const d = selectedDate ? new Date(selectedDate) : new Date();
+      const seq = getNextPoSequence(records, d);
+      setNomorSurat(generateLivePoNumber(d, seq, poFormat));
+    }
+  }, [nomorSurat, records, poFormat, selectedDate]);
   const [items, setItems] = useState<PoMaterialItem[]>(DEFAULT_ITEMS);
   const [notes, setNotes] = useState<string>(
     "Pengadaan material mendesak untuk percepatan implementasi jaringan FTTH & aktivasi pelanggan di area proyek. Mohon diproses dan dikirim ke gudang transit / site sesuai jadwal."
@@ -330,7 +398,8 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
     if (parts.length === 3) {
       const d = new Date(parts[0], parts[1] - 1, parts[2]);
       setTanggalSurat(formatLiveIndonesianDate(d));
-      setNomorSurat(generateLivePoNumber(d));
+      const seq = getNextPoSequence(records, d);
+      setNomorSurat(generateLivePoNumber(d, seq, poFormat));
     }
   };
 
@@ -338,9 +407,21 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
     const today = new Date();
     setSelectedDate(today.toISOString().slice(0, 10));
     setTanggalSurat(formatLiveIndonesianDate(today));
-    setNomorSurat(generateLivePoNumber(today));
+    const seq = getNextPoSequence(records, today);
+    setNomorSurat(generateLivePoNumber(today, seq, poFormat));
     if (onShowToast) {
-      onShowToast("Tanggal surat dan nomor surat diperbarui ke hari ini.", "success");
+      onShowToast("Tanggal surat dan nomor surat diperbarui otomatis ke hari ini.", "success");
+    }
+  };
+
+  const handleApplyFormat = (fmt: PoNumberFormat) => {
+    setPoFormat(fmt);
+    const d = selectedDate ? new Date(selectedDate) : new Date();
+    const seq = getNextPoSequence(records, d);
+    const generated = generateLivePoNumber(d, seq, fmt);
+    setNomorSurat(generated);
+    if (onShowToast) {
+      onShowToast(`Format nomor surat diubah ke ${fmt}: ${generated}`, "success");
     }
   };
 
@@ -555,9 +636,12 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
     setCurrentPoId(null);
     setCurrentStatus("Diajukan");
     handleResetDefaults();
+    const today = new Date();
+    const seq = getNextPoSequence(records, today);
+    setNomorSurat(generateLivePoNumber(today, seq, poFormat));
     setViewMode("form");
     if (onShowToast) {
-      onShowToast("Formulir Permohonan PO baru siap diisi.", "success");
+      onShowToast("Formulir Permohonan PO baru siap diisi dengan nomor urut otomatis.", "success");
     }
   };
 
@@ -832,83 +916,157 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
           <div className="surface-card border rounded-2xl p-5 shadow-xs space-y-4">
             <h2 className="text-sm font-bold text-main flex items-center gap-2 border-b pb-2.5">
               <Building2 className="w-4 h-4 text-emerald-500" />
-              <span>1. Nomor Dokumen, Tanggal &amp; Lokasi Proyek</span>
+              <span>No Doc Tgl &amp; Area</span>
             </h2>
 
+            {/* Row 1: 3 Balanced Form Columns */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Nomor Surat */}
-              <div>
-                <label className="block text-xs font-semibold text-main mb-1.5 flex items-center justify-between">
-                  <span>Nomor Surat / Dokumen</span>
-                  <button
-                    type="button"
-                    onClick={handleResetToToday}
-                    className="text-[10px] text-emerald-500 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Sparkles className="w-3 h-3" /> Auto
-                  </button>
-                </label>
-                <input
-                  type="text"
-                  value={nomorSurat}
-                  onChange={(e) => setNomorSurat(e.target.value)}
-                  placeholder="FAMIKA/IX/2026"
-                  className="w-full text-xs font-mono font-bold p-2.5 rounded-xl border surface-elevated text-main focus:ring-1 focus:ring-emerald-500"
-                />
-                <p className="text-[10px] text-muted mt-1">
-                  Format otomatis: FAMIKA/[Bulan Romawi]/[Tahun]
-                </p>
-              </div>
-
-              {/* Tanggal Surat */}
-              <div>
-                <label className="block text-xs font-semibold text-main mb-1.5 flex items-center justify-between">
-                  <span>Tanggal Surat (Format Indonesia)</span>
-                  <span className="text-[10px] text-muted">Hari ini</span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => handleDateChange(e.target.value)}
-                    className="w-10 p-2 rounded-xl border surface-elevated text-main text-xs cursor-pointer"
-                    title="Pilih tanggal dari kalender"
-                  />
+              {/* Kolom 1: Nomor Surat PO */}
+              <div className="space-y-1.5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-main flex items-center gap-1.5">
+                      <span>Nomor Surat PO</span>
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold font-mono">
+                        Auto
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = selectedDate ? new Date(selectedDate) : new Date();
+                        const seq = getNextPoSequence(records, d);
+                        const generated = generateLivePoNumber(d, seq, poFormat);
+                        setNomorSurat(generated);
+                        if (onShowToast) {
+                          onShowToast(`Nomor surat di-generate: ${generated}`, "success");
+                        }
+                      }}
+                      className="text-[10px] text-emerald-500 hover:text-emerald-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      title="Generate ulang nomor urut otomatis"
+                    >
+                      <Sparkles className="w-3 h-3" /> Auto No ({String(getNextPoSequence(records, new Date(selectedDate || Date.now()))).padStart(3, "0")})
+                    </button>
+                  </div>
                   <input
                     type="text"
-                    value={tanggalSurat}
-                    onChange={(e) => setTanggalSurat(e.target.value)}
-                    className="flex-1 text-xs font-semibold p-2.5 rounded-xl border surface-elevated text-main focus:ring-1 focus:ring-emerald-500"
+                    value={nomorSurat}
+                    onChange={(e) => setNomorSurat(e.target.value)}
+                    placeholder="001/PO-MAT/FAMIKA/IX/2026"
+                    className="w-full text-xs font-mono font-bold p-2.5 rounded-xl border surface-elevated text-main focus:ring-1 focus:ring-emerald-500 shadow-xs"
                   />
                 </div>
-                <p className="text-[10px] text-muted mt-1">
-                  Otomatis terisi live date bahasa Indonesia
+                <p className="text-[10px] text-muted truncate">
+                  No. Urut: <span className="font-mono text-emerald-400 font-semibold">{String(getNextPoSequence(records, new Date(selectedDate || Date.now()))).padStart(3, "0")}</span> • Format: {poFormat}
                 </p>
               </div>
 
-              {/* Lokasi Proyek */}
-              <div>
-                <label className="block text-xs font-semibold text-main mb-1.5">
-                  Lokasi Proyek
-                </label>
-                <div className="space-y-1.5">
+              {/* Kolom 2: Tanggal Surat */}
+              <div className="space-y-1.5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-main">
+                      Tanggal Surat
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleResetToToday}
+                      className="text-[10px] text-emerald-500 hover:text-emerald-400 font-semibold hover:underline cursor-pointer"
+                    >
+                      Hari Ini
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative shrink-0">
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                        title="Klik untuk memilih tanggal dari kalender"
+                      />
+                      <button
+                        type="button"
+                        className="p-2.5 rounded-xl border surface-elevated text-emerald-500 hover:text-emerald-400 flex items-center justify-center cursor-pointer shadow-xs transition-colors"
+                        title="Buka kalender"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={tanggalSurat}
+                      onChange={(e) => setTanggalSurat(e.target.value)}
+                      placeholder="25 September 2026"
+                      className="flex-1 text-xs font-semibold p-2.5 rounded-xl border surface-elevated text-main focus:ring-1 focus:ring-emerald-500 shadow-xs"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted truncate">
+                  Klik ikon kalender untuk memilih tanggal
+                </p>
+              </div>
+
+              {/* Kolom 3: Lokasi Proyek */}
+              <div className="space-y-1.5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-main">
+                      Lokasi Proyek / Site
+                    </label>
+                    <span className="text-[10px] text-muted">Area</span>
+                  </div>
                   <input
                     type="text"
                     list="location-presets"
                     value={lokasiProyek}
                     onChange={(e) => setLokasiProyek(e.target.value)}
                     placeholder="Casa Grande Cinere"
-                    className="w-full text-xs font-semibold p-2.5 rounded-xl border surface-elevated text-main focus:ring-1 focus:ring-emerald-500"
+                    className="w-full text-xs font-semibold p-2.5 rounded-xl border surface-elevated text-main focus:ring-1 focus:ring-emerald-500 shadow-xs"
                   />
                   <datalist id="location-presets">
                     {PROJECT_LOCATIONS.map((loc) => (
                       <option key={loc} value={loc} />
                     ))}
                   </datalist>
-                  <p className="text-[10px] text-muted">
-                    Bawaan: Casa Grande Cinere (dapat diganti)
-                  </p>
                 </div>
+                <p className="text-[10px] text-muted truncate">
+                  Pilih dari daftar atau ketik nama area proyek
+                </p>
+              </div>
+            </div>
+
+            {/* Row 2: Format Selection Toolbar Strip */}
+            <div className="pt-3 border-t border-subtle flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-muted font-medium mr-1 flex items-center gap-1">
+                  <span>Format Penomoran:</span>
+                </span>
+                {[
+                  { id: "PO-MAT", label: "PO-MAT (Resmi)", desc: "Standar Resmi PO Material" },
+                  { id: "SPM-FO", label: "SPM-FO (Pengajuan)", desc: "Surat Pengajuan Material FO" },
+                  { id: "PO-DATE", label: "PO-DATE (Serial)", desc: "Format Serial Tanggal ISO" },
+                  { id: "PO-OPS", label: "PO-OPS (Operasional)", desc: "PO Pemeliharaan / Lapangan" }
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => handleApplyFormat(f.id as PoNumberFormat)}
+                    title={f.desc}
+                    className={`text-[10.5px] px-2.5 py-1 rounded-lg font-mono font-semibold transition-all border cursor-pointer ${
+                      poFormat === f.id
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-xs font-bold"
+                        : "surface-muted text-muted hover:text-main hover:surface-elevated border-subtle"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-[11px] text-muted flex items-center gap-1.5 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                <span>Pola aktif: <code className="font-mono text-emerald-400 font-bold text-xs">{nomorSurat}</code></span>
               </div>
             </div>
           </div>
@@ -919,11 +1077,8 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
               <div>
                 <h2 className="text-sm font-bold text-main flex items-center gap-2">
                   <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-                  <span>2. Rincian Kebutuhan Material</span>
+                  <span>Kebutuhan Material</span>
                 </h2>
-                <p className="text-xs text-muted">
-                  Tambah, ubah, atau hapus baris daftar pengadaan material
-                </p>
               </div>
 
               <button
@@ -1049,7 +1204,7 @@ export const PoMaterialPanel: React.FC<PoMaterialPanelProps> = ({
           <div className="surface-card border rounded-2xl p-5 shadow-xs space-y-4">
             <h2 className="text-sm font-bold text-main flex items-center gap-2 border-b pb-2.5">
               <PenTool className="w-4 h-4 text-emerald-500" />
-              <span>3. Data Pejabat Pengesahan (Pembuat &amp; Mengetahui/Menyetujui)</span>
+              <span>Pengesahan</span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

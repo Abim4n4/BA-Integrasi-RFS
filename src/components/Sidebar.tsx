@@ -264,16 +264,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* Section: Sistem & Integrasi */}
-          <div className="space-y-1.5">
-            {(!isCollapsed || mobileOpen) && (
-              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted">
-                Admin & Integrasi
-              </p>
-            )}
+          {/* Section: Sistem & Integrasi - Hanya Role Admin yang bisa melihat & menggunakan */}
+          {currentUser?.role === "admin" && (
+            <div className="space-y-1.5">
+              {(!isCollapsed || mobileOpen) && (
+                <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted">
+                  Admin &amp; Integrasi
+                </p>
+              )}
 
-            {/* 3. Panel Admin (with PRO Badge) */}
-            {currentUser?.role === "admin" && (
+              {/* 3. Panel Admin (with PRO Badge) */}
               <button
                 id="tab-btn-admin"
                 onClick={() => handleNavClick("admin")}
@@ -305,39 +305,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 )}
               </button>
-            )}
 
-            {/* 4. Ekspor Kode GAS (Code.gs) */}
-            <button
-              id="tab-btn-gas"
-              onClick={() => handleNavClick("gas")}
-              title="Ekspor Kode GAS (Code.gs)"
-              className={`w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
-                activeTab === "gas"
-                  ? "surface-elevated text-main font-bold border border-subtle shadow-sm neon-glow"
-                  : "text-muted hover:text-main hover:surface-elevated"
-              }`}
-            >
-              {activeTab === "gas" && (
-                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full accent-bg shadow-[0_0_10px_var(--accent)]" />
-              )}
-              <div
-                className={`p-1.5 rounded-lg transition-colors ${
+              {/* 4. Ekspor Kode GAS (Code.gs) */}
+              <button
+                id="tab-btn-gas"
+                onClick={() => handleNavClick("gas")}
+                title="Ekspor Kode GAS (Code.gs)"
+                className={`w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
                   activeTab === "gas"
-                    ? "accent-bg text-white shadow-sm"
-                    : "surface-muted text-sky-400 group-hover:text-sky-300"
+                    ? "surface-elevated text-main font-bold border border-subtle shadow-sm neon-glow"
+                    : "text-muted hover:text-main hover:surface-elevated"
                 }`}
               >
-                <Code2 className="w-4 h-4 shrink-0" />
-              </div>
-              {(!isCollapsed || mobileOpen) && (
-                <span className="truncate flex-1 text-left">Ekspor Kode GAS (Code.gs)</span>
-              )}
-              {(!isCollapsed || mobileOpen) && activeTab === "gas" && (
-                <ChevronRight className="w-3.5 h-3.5 accent-color shrink-0 ml-auto" />
-              )}
-            </button>
-          </div>
+                {activeTab === "gas" && (
+                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full accent-bg shadow-[0_0_10px_var(--accent)]" />
+                )}
+                <div
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    activeTab === "gas"
+                      ? "accent-bg text-white shadow-sm"
+                      : "surface-muted text-sky-400 group-hover:text-sky-300"
+                  }`}
+                >
+                  <Code2 className="w-4 h-4 shrink-0" />
+                </div>
+                {(!isCollapsed || mobileOpen) && (
+                  <span className="truncate flex-1 text-left">Ekspor Kode GAS (Code.gs)</span>
+                )}
+                {(!isCollapsed || mobileOpen) && activeTab === "gas" && (
+                  <ChevronRight className="w-3.5 h-3.5 accent-color shrink-0 ml-auto" />
+                )}
+              </button>
+            </div>
+          )}
 
           {/* Section: Tools & Status */}
           <div className="space-y-2 pt-2 border-t border-subtle">
@@ -354,13 +354,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Font Size Mode (Ramah Waspang Lapangan) */}
             {(!isCollapsed || mobileOpen) && onFontSizeChange && (
-              <div className="mx-1 p-2.5 rounded-xl surface-elevated border space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] font-bold text-main">
-                  <span className="flex items-center gap-1.5">
-                    <span>👓</span>
+              <div className="mx-1 px-2.5 py-1.5 rounded-xl surface-elevated border space-y-1 shadow-2xs">
+                <div className="flex items-center justify-between text-[10px] font-semibold text-main">
+                  <span className="flex items-center gap-1">
+                    <span className="text-xs">👓</span>
                     <span>Ukuran Huruf (Waspang)</span>
                   </span>
-                  <span className="text-[10px] text-emerald-500 font-bold font-mono">
+                  <span className="text-[9px] text-emerald-500 font-bold font-mono">
                     {fontSize === "normal" ? "Normal" : fontSize === "waspang" ? "Besar (+16%)" : "Ekstra (+28%)"}
                   </span>
                 </div>
@@ -368,7 +368,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => onFontSizeChange("normal")}
-                    className={`py-1 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                    className={`py-1 px-1 rounded-lg text-[9.5px] font-bold tracking-tight transition-all text-center cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs ${
                       fontSize === "normal"
                         ? "bg-slate-700 text-white shadow-xs"
                         : "surface-card text-muted hover:text-main"
@@ -380,7 +380,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => onFontSizeChange("waspang")}
-                    className={`py-1 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                    className={`py-1 px-1 rounded-lg text-[9.5px] font-bold tracking-tight transition-all text-center cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs ${
                       fontSize === "waspang"
                         ? "bg-emerald-600 text-white shadow-xs"
                         : "surface-card text-muted hover:text-main"
@@ -392,7 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => onFontSizeChange("extra")}
-                    className={`py-1 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                    className={`py-1 px-1 rounded-lg text-[9.5px] font-bold tracking-tight transition-all text-center cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs ${
                       fontSize === "extra"
                         ? "bg-amber-600 text-white shadow-xs"
                         : "surface-card text-muted hover:text-main"
@@ -409,14 +409,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {(!isCollapsed || mobileOpen) && (
               <div
                 id="realtime-clock"
-                className="mx-1 flex items-center gap-2 px-3 py-2 rounded-xl surface-elevated text-[11px] font-mono text-main border"
+                className="mx-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl surface-elevated text-[9.5px] sm:text-[10px] font-mono tracking-tight text-main border whitespace-nowrap overflow-hidden shadow-2xs"
+                title="Waktu Real-time Sistem (WIB)"
               >
-                <div className="relative flex h-2 w-2 shrink-0">
+                <div className="relative flex h-1.5 w-1.5 shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                 </div>
-                <Clock className="w-3.5 h-3.5 text-muted shrink-0" />
-                <span className="font-semibold truncate">{currentTime || "--:--:-- WIB"}</span>
+                <Clock className="w-3 h-3 text-muted shrink-0" />
+                <span className="font-semibold tracking-tight whitespace-nowrap truncate">{currentTime || "--:--:-- WIB"}</span>
               </div>
             )}
           </div>

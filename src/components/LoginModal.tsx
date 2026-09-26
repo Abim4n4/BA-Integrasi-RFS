@@ -343,8 +343,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         </div>
         <div className="flex items-center gap-3">
           {currentTime && (
-            <span className="flex items-center gap-1.5 font-medium">
-              <Clock className="w-3.5 h-3.5 opacity-70" />
+            <span className="flex items-center gap-1.5 font-medium text-[10px] sm:text-[11px] tracking-tight whitespace-nowrap">
+              <Clock className="w-3.5 h-3.5 opacity-70 shrink-0" />
               <span>{currentTime}</span>
             </span>
           )}

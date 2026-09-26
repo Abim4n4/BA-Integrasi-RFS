@@ -1575,49 +1575,38 @@ export const FormRfs: React.FC<FormRfsProps> = ({
                     )}
                   </div>
 
-                  {/* Field 3: Radio Button Interface SFP 1G, SFP 10G, atau LAN RJ45 */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[11px] font-bold text-main flex items-center gap-1">
-                      <Radio className="w-3.5 h-3.5 text-amber-500" />
-                      Interface / Uplink <span className="text-rose-500">*</span>
-                    </label>
+                  {/* Field 3: Segmented Switcher Interface SFP 1G, SFP 10G, atau LAN RJ45 */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-main flex items-center gap-1">
+                        <Radio className="w-3.5 h-3.5 text-amber-500" />
+                        Interface / Uplink <span className="text-rose-500">*</span>
+                      </label>
+                      <span className="text-[9.5px] font-mono text-emerald-500 font-bold">
+                        {formData.interfaceType}
+                      </span>
+                    </div>
 
-                    <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+                    <div className="grid grid-cols-3 gap-1 p-1 rounded-lg surface-card border border-subtle h-[38px] items-center">
                       {[
-                        { id: "SFP 1G", label: "SFP 1G", desc: "Optik BiDi 1G" },
-                        { id: "SFP 10G", label: "SFP 10G", desc: "SFP+ 10 Gbps" },
-                        { id: "LAN RJ45", label: "LAN RJ45", desc: "Port GE UTP" }
+                        { id: "SFP 1G", label: "SFP 1G" },
+                        { id: "SFP 10G", label: "SFP 10G" },
+                        { id: "LAN RJ45", label: "LAN RJ45" }
                       ].map((item) => {
                         const isSelected = formData.interfaceType === item.id;
                         return (
-                          <label
+                          <button
                             key={item.id}
-                            className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center cursor-pointer transition-all ${
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, interfaceType: item.id as 'SFP 1G' | 'SFP 10G' | 'LAN RJ45' }))}
+                            className={`h-full rounded-md text-[11px] sm:text-xs font-bold transition-all text-center flex items-center justify-center whitespace-nowrap cursor-pointer px-1 ${
                               isSelected
-                                ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs"
-                                : "surface-card border-subtle text-muted hover:text-main hover:border-emerald-500/20"
+                                ? "bg-emerald-600 text-white shadow-xs"
+                                : "text-muted hover:text-main hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
                             }`}
                           >
-                            <input
-                              type="radio"
-                              name="interfaceType"
-                              value={item.id}
-                              checked={isSelected}
-                              onChange={() => setFormData(prev => ({ ...prev, interfaceType: item.id as 'SFP 1G' | 'SFP 10G' | 'LAN RJ45' }))}
-                              className="sr-only"
-                            />
-                            <div className="flex items-center gap-1">
-                              <span className={`w-3 h-3 rounded-full border flex items-center justify-center ${
-                                isSelected ? "border-emerald-600 bg-emerald-600" : "border-slate-400"
-                              }`}>
-                                {isSelected && <span className="w-1.5 h-1.5 bg-white rounded-full" />}
-                              </span>
-                              <span className="text-xs">{item.label}</span>
-                            </div>
-                            <span className="text-[9px] font-normal text-muted mt-0.5">
-                              {item.desc}
-                            </span>
-                          </label>
+                            {item.label}
+                          </button>
                         );
                       })}
                     </div>

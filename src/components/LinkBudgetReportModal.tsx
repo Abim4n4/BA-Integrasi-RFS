@@ -164,13 +164,9 @@ export const LinkBudgetReportModal: React.FC<LinkBudgetReportModalProps> = ({
                 <span className="col-span-2 font-semibold text-slate-900">: {record.oltName}</span>
               </div>
               <div className="grid grid-cols-3 gap-1">
-                <span className="text-slate-500">Port SFP OLT</span>
-                <span className="col-span-2 font-bold text-slate-900">: {record.oltFrameSlotPort}</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1">
-                <span className="text-slate-500">Class SFP / Tx</span>
+                <span className="text-slate-500">Daya Pancar Tx OLT</span>
                 <span className="col-span-2 font-bold text-emerald-800">
-                  : {record.sfpClass} ({record.txPowerDbm >= 0 ? `+${record.txPowerDbm}` : record.txPowerDbm} dBm)
+                  : {record.txPowerDbm >= 0 ? `+${record.txPowerDbm}` : record.txPowerDbm} dBm
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-1">
@@ -339,35 +335,35 @@ export const LinkBudgetReportModal: React.FC<LinkBudgetReportModalProps> = ({
             Demikian Berita Acara Pengukuran Redaman Link Budget dan Hasil TesCom ini dibuat dengan sebenar-benarnya untuk digunakan sebagaimana mestinya.
           </p>
           <div className="grid grid-cols-3 gap-4 text-center text-xs">
-            {/* 1. Pelaksana / Teknisi */}
+            {/* 1. Waspang */}
             <div className="flex flex-col items-center justify-between h-32">
-              <p className="font-bold text-slate-800 uppercase text-[10px]">Pelaksana Teknisi</p>
+              <p className="font-bold text-slate-800 uppercase text-[10px]">Waspang</p>
               <div className="h-16 flex items-center justify-center">
                 {record.signatureTechnician ? (
-                  <img src={record.signatureTechnician} alt="TTD Teknisi" className="max-h-14 max-w-full object-contain" />
+                  <img src={record.signatureTechnician} alt="TTD Waspang" className="max-h-14 max-w-full object-contain" />
                 ) : (
                   <div className="w-28 border-b border-dashed border-slate-400 h-8" />
                 )}
               </div>
               <div>
                 <p className="font-black text-slate-900 underline">{record.technicianName || "Rian Pratama"}</p>
-                <p className="text-[10px] text-slate-500">Bima Waluya Apps</p>
+                <p className="text-[10px] text-slate-500">Pengawas Lapangan (Waspang)</p>
               </div>
             </div>
 
-            {/* 2. Pengawas Lapangan (WASPANG) */}
+            {/* 2. PM */}
             <div className="flex flex-col items-center justify-between h-32">
-              <p className="font-bold text-slate-800 uppercase text-[10px]">Pengawas Lapangan (WASPANG)</p>
+              <p className="font-bold text-slate-800 uppercase text-[10px]">Project Manager (PM)</p>
               <div className="h-16 flex items-center justify-center">
                 {record.signatureWaspang ? (
-                  <img src={record.signatureWaspang} alt="TTD Waspang" className="max-h-14 max-w-full object-contain" />
+                  <img src={record.signatureWaspang} alt="TTD PM" className="max-h-14 max-w-full object-contain" />
                 ) : (
                   <div className="w-28 border-b border-dashed border-slate-400 h-8" />
                 )}
               </div>
               <div>
                 <p className="font-black text-slate-900 underline">{record.waspangName || "Ir. Joko Sutrisno"}</p>
-                <p className="text-[10px] text-slate-500">Waspang Resmi Mitra / Pemberi Tugas</p>
+                <p className="text-[10px] text-slate-500">Project Manager</p>
               </div>
             </div>
 

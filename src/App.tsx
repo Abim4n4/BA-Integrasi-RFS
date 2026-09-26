@@ -215,6 +215,13 @@ export default function App() {
     fetchRecords();
   }, [fetchRecords]);
 
+  // Guard Admin & Integrasi: hanya role "admin" yang bisa melihat dan menggunakan
+  useEffect(() => {
+    if (currentUser && currentUser.role !== "admin" && (activeTab === "admin" || activeTab === "gas")) {
+      setActiveTab("form");
+    }
+  }, [currentUser, activeTab]);
+
   // Handle Login Success
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
@@ -462,7 +469,7 @@ export default function App() {
                   </div>
                 </div>
               )}
-              {activeTab === "admin" && (
+              {activeTab === "admin" && currentUser?.role === "admin" && (
                 <div className="flex items-center gap-2 min-w-0">
                   <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -475,7 +482,7 @@ export default function App() {
                   </div>
                 </div>
               )}
-              {activeTab === "gas" && (
+              {activeTab === "gas" && currentUser?.role === "admin" && (
                 <div className="flex items-center gap-2 min-w-0">
                   <Code2 className="w-4 h-4 text-sky-400 shrink-0" />
                   <h2 className="text-sm sm:text-base font-bold text-main leading-tight truncate">
@@ -488,53 +495,6 @@ export default function App() {
 
           {/* Right Topbar Indicators */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Quick Font Size Switcher for Field Waspang */}
-            <div 
-              className="flex items-center gap-0.5 surface-elevated border border-subtle rounded-full p-0.5 text-xs shadow-xs shrink-0" 
-              title="Pengatur Ukuran Huruf (Ramah Pengawas Lapangan/Waspang Senior)"
-            >
-              <span className="text-[11px] font-bold text-muted px-1.5 hidden md:inline-flex items-center gap-1 select-none">
-                <span>👓</span>
-                <span className="hidden xl:inline">Font Waspang:</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setFontSize("normal")}
-                className={`px-2 py-0.5 rounded-full font-bold transition-all text-xs cursor-pointer ${
-                  fontSize === "normal"
-                    ? "bg-slate-700 text-white shadow-xs"
-                    : "text-muted hover:text-main hover:bg-slate-200 dark:hover:bg-slate-800"
-                }`}
-                title="Ukuran Standar Normal (100%)"
-              >
-                A
-              </button>
-              <button
-                type="button"
-                onClick={() => setFontSize("waspang")}
-                className={`px-2 py-0.5 rounded-full font-bold transition-all text-xs cursor-pointer ${
-                  fontSize === "waspang"
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "text-muted hover:text-main hover:bg-slate-200 dark:hover:bg-slate-800"
-                }`}
-                title="Mode Nyaman Waspang (+16% - Sangat Disarankan untuk Lapangan)"
-              >
-                A+
-              </button>
-              <button
-                type="button"
-                onClick={() => setFontSize("extra")}
-                className={`px-2 py-0.5 rounded-full font-bold transition-all text-xs cursor-pointer ${
-                  fontSize === "extra"
-                    ? "bg-amber-600 text-white shadow-xs"
-                    : "text-muted hover:text-main hover:bg-slate-200 dark:hover:bg-slate-800"
-                }`}
-                title="Mode Ekstra Jelas (+28% - Tulisan Besar)"
-              >
-                A++
-              </button>
-            </div>
-
             {/* App Title Badge */}
             <div className="hidden xl:flex items-center pr-3 border-r border-subtle shrink-0">
               <span className="text-[11px] font-black tracking-wider text-main uppercase">
@@ -618,7 +578,9 @@ export default function App() {
             <AdminPanel currentUser={currentUser} />
           )}
 
-          {activeTab === "gas" && <GasExportModal />}
+          {activeTab === "gas" && currentUser?.role === "admin" && (
+            <GasExportModal />
+          )}
         </main>
       </div>
     </>

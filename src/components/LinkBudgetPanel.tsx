@@ -234,52 +234,28 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
     onShowToast("Nilai pengukuran OPM per port berhasil diisi otomatis sesuai toleransi lapangan!", "success");
   };
 
-  // Presets
+  // Presets Jaringan
   const applyPreset = (presetName: string) => {
-    if (presetName === "telkom_standard") {
-      setSfpClass("Class C+");
+    if (presetName === "odc_1_8_odp_1_8") {
       setTxPowerDbm(5.0);
       setFeederLengthKm(3.5);
+      setSpliceCount(4);
+      setConnectorCount(4);
+      setSplitter1Ratio("1:8");
+      setDistributionLengthKm(0.8);
+      setSplitter2Ratio("1:8");
+      setSafetyMarginDb(2.0);
+      onShowToast("Preset Jaringan ODC 1:8 + 1:8 = 1:64 berhasil diterapkan!", "success");
+    } else if (presetName === "odc_1_4_odp_1_8") {
+      setTxPowerDbm(5.0);
+      setFeederLengthKm(3.0);
       setSpliceCount(4);
       setConnectorCount(4);
       setSplitter1Ratio("1:4");
       setDistributionLengthKm(0.8);
       setSplitter2Ratio("1:8");
       setSafetyMarginDb(2.0);
-      onShowToast("Preset Telkom GPON Standar (1:4 + 1:8 = 1:32) diterapkan!", "success");
-    } else if (presetName === "ioh_standard") {
-      setSfpClass("Class C+");
-      setTxPowerDbm(5.0);
-      setFeederLengthKm(2.8);
-      setSpliceCount(3);
-      setConnectorCount(4);
-      setSplitter1Ratio("1:8");
-      setDistributionLengthKm(0.6);
-      setSplitter2Ratio("1:4");
-      setSafetyMarginDb(2.0);
-      onShowToast("Preset IOH / Indosat FTTH (1:8 + 1:4 = 1:32) diterapkan!", "success");
-    } else if (presetName === "single_stage") {
-      setSfpClass("Class B+");
-      setTxPowerDbm(3.0);
-      setFeederLengthKm(2.0);
-      setSpliceCount(2);
-      setConnectorCount(2);
-      setSplitter1Ratio("None");
-      setDistributionLengthKm(0.5);
-      setSplitter2Ratio("1:16");
-      setSafetyMarginDb(1.5);
-      onShowToast("Preset Single Stage ODP 1:16 diterapkan!", "success");
-    } else if (presetName === "c_plus_plus") {
-      setSfpClass("Class C++");
-      setTxPowerDbm(7.5);
-      setFeederLengthKm(5.0);
-      setSpliceCount(6);
-      setConnectorCount(6);
-      setSplitter1Ratio("1:8");
-      setDistributionLengthKm(1.2);
-      setSplitter2Ratio("1:8");
-      setSafetyMarginDb(2.5);
-      onShowToast("Preset High Capacity C++ (1:8 + 1:8 = 1:64) diterapkan!", "success");
+      onShowToast("Preset Jaringan ODC 1:4 + 1:8 = 1:32 berhasil diterapkan!", "success");
     }
   };
 
@@ -482,10 +458,6 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
             <h1 className="text-lg sm:text-xl md:text-2xl font-black text-main tracking-tight">
               LinkB &amp; TesCom
             </h1>
-            <p className="text-xs text-muted max-w-3xl leading-relaxed">
-              Modul rekayasa optik terintegrasi untuk menghitung loss teoritis dari pemancar OLT, kabel feeder,
-              splicing, konektor, splitter bertingkat (ODC &amp; ODP), hingga pengujian nyata menggunakan OPM di lapangan untuk Berita Acara Bima Waluya Apps.
-            </p>
           </div>
 
           {/* Quick Action Buttons (Responsive Grid on Mobile HP, Flex on Tablet/PC) */}
@@ -515,35 +487,27 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
           </div>
         </div>
 
-        {/* Preset Selector Pill Bar (Touch-friendly Horizontal Scroll on HP) */}
-        <div className="mt-5 pt-3.5 border-t border-subtle flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1 scroll-smooth text-xs">
-          <span className="text-[10.5px] sm:text-[11px] font-bold text-muted shrink-0 flex items-center gap-1">
-            <Sliders className="w-3 h-3 text-teal-400" />
+        {/* Preset Selector Pill Bar */}
+        <div className="mt-5 pt-3.5 border-t border-subtle flex items-center gap-2 overflow-x-auto no-scrollbar py-1 scroll-smooth text-xs">
+          <span className="text-[11px] font-bold text-muted shrink-0 flex items-center gap-1.5">
+            <Sliders className="w-3.5 h-3.5 text-teal-400" />
             Preset Jaringan:
           </span>
           <button
-            onClick={() => applyPreset("telkom_standard")}
-            className="px-2.5 py-1 rounded-lg surface-elevated border hover:border-teal-500/50 text-main font-semibold text-[10.5px] sm:text-[11px] whitespace-nowrap transition-colors cursor-pointer shrink-0"
+            onClick={() => applyPreset("odc_1_8_odp_1_8")}
+            className="px-3 py-1.5 rounded-xl surface-elevated border border-subtle hover:border-teal-500/60 text-main font-bold text-xs whitespace-nowrap transition-all shadow-xs cursor-pointer shrink-0 flex items-center gap-1.5 hover:bg-teal-500/10"
+            title="Splitter ODC 1:8 dan ODP 1:8 (Total Rasio 1:64)"
           >
-            Telkom GPON (ODC 1:4 + ODP 1:8 = 1:32)
+            <span className="w-2 h-2 rounded-full bg-teal-400"></span>
+            <span>ODC 1:8 + 1:8 = 1:64</span>
           </button>
           <button
-            onClick={() => applyPreset("ioh_standard")}
-            className="px-2.5 py-1 rounded-lg surface-elevated border hover:border-teal-500/50 text-main font-semibold text-[10.5px] sm:text-[11px] whitespace-nowrap transition-colors cursor-pointer shrink-0"
+            onClick={() => applyPreset("odc_1_4_odp_1_8")}
+            className="px-3 py-1.5 rounded-xl surface-elevated border border-subtle hover:border-teal-500/60 text-main font-bold text-xs whitespace-nowrap transition-all shadow-xs cursor-pointer shrink-0 flex items-center gap-1.5 hover:bg-teal-500/10"
+            title="Splitter ODC 1:4 dan ODP 1:8 (Total Rasio 1:32)"
           >
-            IOH / Indosat (ODC 1:8 + ODP 1:4 = 1:32)
-          </button>
-          <button
-            onClick={() => applyPreset("single_stage")}
-            className="px-2.5 py-1 rounded-lg surface-elevated border hover:border-teal-500/50 text-main font-semibold text-[10.5px] sm:text-[11px] whitespace-nowrap transition-colors cursor-pointer shrink-0"
-          >
-            Single Stage ODP 1:16
-          </button>
-          <button
-            onClick={() => applyPreset("c_plus_plus")}
-            className="px-2.5 py-1 rounded-lg surface-elevated border hover:border-teal-500/50 text-main font-semibold text-[10.5px] sm:text-[11px] whitespace-nowrap transition-colors cursor-pointer shrink-0"
-          >
-            High Density C++ (ODC 1:8 + ODP 1:8 = 1:64)
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>ODC 1:4 + 1:8 = 1:32</span>
           </button>
         </div>
       </div>
@@ -599,7 +563,7 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
           {/* Visual Link Diagram Schematics */}
           <div className="surface-card border border-subtle rounded-2xl p-4 sm:p-6 shadow-sm">
             <h3 className="text-xs font-black uppercase tracking-wider text-muted mb-4 flex items-center justify-between">
-              <span>Topologi Visual Skematik Redaman (OLT &rarr; ODC &rarr; ODP)</span>
+              <span>Topologi (OLT &rarr; ODC &rarr; ODP)</span>
               <span className="text-[11px] font-mono text-teal-400 font-bold">
                 Total Redaman Teori: {calcResult.totalLossTheoryDb} dB
               </span>
@@ -612,15 +576,15 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-bold uppercase text-teal-400">1. Node OLT / POP</span>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-teal-500/20 text-teal-300">
-                    {sfpClass}
+                    GPON Tx
                   </span>
                 </div>
                 <p className="font-extrabold text-main text-sm truncate">{oltName}</p>
-                <p className="text-[10px] font-mono text-muted">Port: {oltFrameSlotPort}</p>
+                <p className="text-[10px] text-muted">Pemancar Utama Jaringan</p>
                 <div className="mt-3 pt-2 border-t border-subtle flex items-baseline justify-between">
                   <span className="text-[10px] text-muted">Daya Tx OLT:</span>
                   <span className="text-sm font-mono font-black text-emerald-400">
-                    +{txPowerDbm.toFixed(2)} dBm
+                    {txPowerDbm >= 0 ? `+${txPowerDbm.toFixed(2)}` : txPowerDbm.toFixed(2)} dBm
                   </span>
                 </div>
               </div>
@@ -695,7 +659,7 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
             <div className="surface-card border border-subtle rounded-2xl p-5 space-y-4">
               <h3 className="font-extrabold text-sm text-main flex items-center gap-2 border-b border-subtle pb-2.5">
                 <Sliders className="w-4 h-4 text-teal-400" />
-                <span>Parameter Identitas &amp; Pemancar OLT</span>
+                <span>Parameter OLT</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -724,32 +688,11 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                     type="text"
                     value={oltName}
                     onChange={e => setOltName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-semibold text-main"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-muted block mb-1">Port SFP OLT</label>
-                  <input
-                    type="text"
-                    value={oltFrameSlotPort}
-                    onChange={e => setOltFrameSlotPort(e.target.value)}
+                    placeholder="Contoh: ZTE C320 / Huawei MA5608T"
                     className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-semibold text-main"
                   />
                 </div>
 
-                <div>
-                  <label className="text-[11px] font-bold text-muted block mb-1">Class Transceiver SFP</label>
-                  <select
-                    value={sfpClass}
-                    onChange={e => handleSfpChange(e.target.value as SfpClass)}
-                    className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-bold text-main cursor-pointer"
-                  >
-                    <option value="Class B+">Class B+ (+1.5 s/d +5.0 dBm)</option>
-                    <option value="Class C+">Class C+ (+3.0 s/d +7.0 dBm)</option>
-                    <option value="Class C++">Class C++ (+6.0 s/d +10.0 dBm)</option>
-                    <option value="Custom">Custom Output Manual</option>
-                  </select>
-                </div>
                 <div>
                   <label className="text-[11px] font-bold text-muted block mb-1">
                     Daya Pancar Tx OLT (dBm)
@@ -761,6 +704,7 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                     onChange={e => setTxPowerDbm(parseFloat(e.target.value) || 0)}
                     className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle font-mono text-xs font-bold text-emerald-400"
                   />
+                  <p className="text-[10px] text-muted mt-1">Output optik aktual daya pancar OLT</p>
                 </div>
 
                 <div>
@@ -792,7 +736,7 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
             <div className="surface-card border border-subtle rounded-2xl p-5 space-y-4">
               <h3 className="font-extrabold text-sm text-main flex items-center gap-2 border-b border-subtle pb-2.5">
                 <Layers className="w-4 h-4 text-emerald-400" />
-                <span>Parameter Segmen Kabel, Splicing &amp; Splitter</span>
+                <span>Parameter Splitter</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -1057,15 +1001,16 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
               </div>
             </div>
 
-            {/* Quick Location & ODC Power Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            {/* Quick Location & ODC Power Bar (Responsive: 1 col on mobile, 2 on tablet/laptop, 4 on desktop) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 text-xs">
               <div>
                 <label className="text-[11px] font-bold text-muted block mb-1">Titik ODP Lapangan</label>
                 <input
                   type="text"
                   value={odpName}
                   onChange={e => setOdpName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-bold text-main"
+                  placeholder="Contoh: ODP-SETU-LAV-04"
+                  className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-bold text-main focus:ring-1 focus:ring-teal-500 shadow-2xs"
                 />
               </div>
 
@@ -1079,7 +1024,7 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                   value={measuredOdcPowerDbm}
                   onChange={e => setMeasuredOdcPowerDbm(parseFloat(e.target.value) || 0)}
                   placeholder="-10.5"
-                  className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle font-mono text-xs font-bold text-teal-400"
+                  className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle font-mono text-xs font-bold text-teal-400 focus:ring-1 focus:ring-teal-500 shadow-2xs"
                 />
                 <span className="text-[10px] text-muted mt-0.5 block">
                   Teori: {calcResult.expectedPowerOdcDbm} dBm
@@ -1093,11 +1038,11 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                 <select
                   value={odpCapacityPorts}
                   onChange={e => handlePortCapacityChange(parseInt(e.target.value) as 8 | 16 | 24)}
-                  className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-bold text-main cursor-pointer"
+                  className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-bold text-main cursor-pointer focus:ring-1 focus:ring-teal-500 shadow-2xs truncate"
                 >
-                  <option value={8}>8 Port (Standar Tiang FTTH)</option>
+                  <option value={8}>8 Port (Standar FTTH)</option>
                   <option value={16}>16 Port (High Density)</option>
-                  <option value={24}>24 Port (Building / Cluster)</option>
+                  <option value={24}>24 Port (Cluster / Gedung)</option>
                 </select>
               </div>
 
@@ -1105,18 +1050,18 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                 <label className="text-[11px] font-bold text-muted block mb-1">
                   Waktu &amp; Tanggal Uji
                 </label>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <input
                     type="date"
                     value={measurementDate}
                     onChange={e => setMeasurementDate(e.target.value)}
-                    className="w-full px-2.5 py-2 rounded-xl surface-elevated border border-subtle text-xs font-semibold text-main"
+                    className="flex-1 min-w-0 px-2.5 py-2 rounded-xl surface-elevated border border-subtle text-xs font-semibold text-main focus:ring-1 focus:ring-teal-500 shadow-2xs"
                   />
                   <input
                     type="time"
                     value={measurementTime}
                     onChange={e => setMeasurementTime(e.target.value)}
-                    className="w-24 px-2 py-2 rounded-xl surface-elevated border border-subtle font-mono text-xs font-semibold text-main"
+                    className="w-20 sm:w-22 shrink-0 px-1.5 py-2 rounded-xl surface-elevated border border-subtle font-mono text-xs font-semibold text-main text-center focus:ring-1 focus:ring-teal-500 shadow-2xs"
                   />
                 </div>
               </div>
@@ -1139,8 +1084,8 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
               </div>
             </div>
 
-            {/* Grid of Port Cards (1-2 on HP, 3 on Tablet, 4 on PC, 8 on Big Screen) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-2.5 sm:gap-3">
+            {/* Grid of Port Cards (Responsive: 1 on mobile, 2 on phablet, 4 on desktop for clean 2-row layout) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {portsMeasurement.map(p => {
                 const portStatusInfo = getStatusBadgeInfo(p.status);
                 const hasWarning = p.deltaFromTheory > 2.0;
@@ -1148,29 +1093,29 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                 return (
                   <div
                     key={p.portNumber}
-                    className={`surface-elevated border rounded-xl p-3.5 space-y-2 transition-all ${
+                    className={`surface-elevated border rounded-2xl p-4 space-y-2.5 transition-all shadow-xs ${
                       p.status === "FAIL"
                         ? "border-rose-500/50 bg-rose-950/10"
                         : p.status === "MARGINAL"
                         ? "border-amber-500/50 bg-amber-950/10"
-                        : "border-subtle"
+                        : "border-subtle hover:border-teal-500/40"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-black text-xs text-main">
+                    <div className="flex items-center justify-between gap-1.5 pb-0.5">
+                      <span className="font-mono font-black text-xs text-main tracking-wide shrink-0">
                         PORT {p.portNumber}
                       </span>
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-tight ${portStatusInfo.badgeClass}`}
+                        className={`px-2 py-0.5 rounded-md text-[9.5px] font-extrabold uppercase tracking-tight shrink-0 ${portStatusInfo.badgeClass}`}
                       >
                         {p.status}
                       </span>
                     </div>
 
                     <div>
-                      <div className="flex items-center justify-between text-[11px] mb-1">
-                        <span className="text-muted">Daya OPM (dBm):</span>
-                        <span className="font-mono text-[10px] text-muted">
+                      <div className="flex items-center justify-between text-[11px] mb-1 gap-1">
+                        <span className="text-muted text-[10.5px] font-medium truncate">Daya OPM (dBm)</span>
+                        <span className="font-mono text-[10px] text-muted shrink-0" title="Deviasi dari teori">
                           &Delta; {p.deltaFromTheory.toFixed(2)} dB
                         </span>
                       </div>
@@ -1179,7 +1124,7 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                         step="0.05"
                         value={p.measuredPowerDbm}
                         onChange={e => handleUpdatePortPower(p.portNumber, e.target.value)}
-                        className={`w-full px-2.5 py-1.5 rounded-lg surface-muted border font-mono text-sm font-bold text-center ${
+                        className={`w-full px-3 py-2 rounded-xl surface-muted border font-mono text-sm sm:text-base font-black text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:ring-1 focus:ring-teal-500 shadow-2xs ${
                           p.status === "FAIL"
                             ? "text-rose-400 border-rose-500/40"
                             : p.status === "MARGINAL"
@@ -1190,8 +1135,8 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                     </div>
 
                     {hasWarning && (
-                      <div className="flex items-center gap-1 text-[9.5px] text-amber-400 leading-tight">
-                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                      <div className="flex items-center gap-1.5 text-[10px] text-amber-400 leading-tight bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                         <span>Deviasi tinggi! Cek konektor/bending.</span>
                       </div>
                     )}
@@ -1206,7 +1151,7 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
                           prev.map(item => (item.portNumber === p.portNumber ? { ...item, notes: val } : item))
                         );
                       }}
-                      className="w-full px-2 py-1 rounded text-[10.5px] surface-muted border border-subtle text-muted placeholder:text-muted/40"
+                      className="w-full px-2.5 py-1.5 rounded-lg text-xs surface-muted border border-subtle text-main placeholder:text-muted/50 focus:ring-1 focus:ring-teal-500"
                     />
                   </div>
                 );
@@ -1230,20 +1175,22 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
               />
               <div className="grid grid-cols-2 gap-3 text-xs pt-1">
                 <div>
-                  <label className="text-[11px] font-bold text-muted block mb-1">Nama Teknisi Pelaksana</label>
+                  <label className="text-[11px] font-bold text-muted block mb-1">Waspang</label>
                   <input
                     type="text"
                     value={technicianName}
                     onChange={e => setTechnicianName(e.target.value)}
+                    placeholder="Nama Waspang"
                     className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-semibold text-main"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-muted block mb-1">Nama Pengawas (Waspang)</label>
+                  <label className="text-[11px] font-bold text-muted block mb-1">PM</label>
                   <input
                     type="text"
                     value={waspangName}
                     onChange={e => setWaspangName(e.target.value)}
+                    placeholder="Nama PM"
                     className="w-full px-3 py-2 rounded-xl surface-elevated border border-subtle text-xs font-semibold text-main"
                   />
                 </div>
@@ -1253,19 +1200,19 @@ export const LinkBudgetPanel: React.FC<LinkBudgetPanelProps> = ({
             {/* Digital Signatures */}
             <div className="surface-card border border-subtle rounded-2xl p-5 space-y-4">
               <h4 className="font-extrabold text-xs uppercase tracking-wider text-muted">
-                Pengesahan Digital Tanda Tangan Lapangan
+                TTD
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DigitalSignaturePad
                   id="sig_tech_tescom"
-                  label="Tanda Tangan Teknisi"
+                  label="Waspang"
                   signerName={technicianName}
                   value={signatureTechnician}
                   onChange={setSignatureTechnician}
                 />
                 <DigitalSignaturePad
                   id="sig_waspang_tescom"
-                  label="Tanda Tangan Waspang"
+                  label="PM"
                   signerName={waspangName}
                   value={signatureWaspang}
                   onChange={setSignatureWaspang}
