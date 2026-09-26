@@ -13,6 +13,33 @@ export interface StoredUser {
 export const DEFAULT_USERS: StoredUser[] = [
   {
     id: "USR-001",
+    email: "admin",
+    password: "admin123",
+    name: "Budi Santoso, S.T. (Admin)",
+    role: "admin",
+    position: "Admin Sistem & Manajer QA",
+    department: "Network Operations Center (NOC)"
+  },
+  {
+    id: "USR-002",
+    email: "wasapang01",
+    password: "lapangan123",
+    name: "Hendra Wijaya, S.T. (Wasapang)",
+    role: "waspang",
+    position: "Koordinator Pengawas Lapangan",
+    department: "Pengawasan & QA Proyek FTTH"
+  },
+  {
+    id: "USR-003",
+    email: "viewer",
+    password: "viewer123",
+    name: "Rian Pratama (Viewer)",
+    role: "user",
+    position: "Monitoring & Viewer",
+    department: "Operasional & Pemantauan"
+  },
+  {
+    id: "USR-004",
     email: "admin@rfs.telco.id",
     password: "admin123",
     name: "Budi Santoso, S.T.",
@@ -21,7 +48,7 @@ export const DEFAULT_USERS: StoredUser[] = [
     department: "Network Operations Center (NOC)"
   },
   {
-    id: "USR-002",
+    id: "USR-005",
     email: "teknisi@rfs.telco.id",
     password: "teknisi123",
     name: "Rian Pratama",
@@ -30,16 +57,7 @@ export const DEFAULT_USERS: StoredUser[] = [
     department: "Field Service & Deployment"
   },
   {
-    id: "USR-003",
-    email: "sales@rfs.telco.id",
-    password: "sales123",
-    name: "Dewi Lestari",
-    role: "user",
-    position: "Account Executive Enterprise",
-    department: "Corporate Enterprise Sales"
-  },
-  {
-    id: "USR-004",
+    id: "USR-006",
     email: "waspang@rfs.telco.id",
     password: "waspang123",
     name: "Hendra Wijaya, S.T.",
@@ -151,9 +169,13 @@ export async function authenticate(email: string, password?: string): Promise<{
 
   // 2. Client-side authentication fallback (Essential for Vercel static deployments)
   const allUsers = getLocalUsers();
-  const matchedUser = allUsers.find(
-    u => u.email.toLowerCase() === cleanEmail && (!u.password || u.password === cleanPassword)
-  );
+  const matchedUser = allUsers.find(u => {
+    const emailMatch =
+      u.email.toLowerCase() === cleanEmail ||
+      u.email.split("@")[0].toLowerCase() === cleanEmail;
+    const passMatch = !u.password || u.password === cleanPassword;
+    return emailMatch && passMatch;
+  });
 
   if (matchedUser) {
     const userProfile: User = {
